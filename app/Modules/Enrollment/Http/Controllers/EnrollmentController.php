@@ -22,8 +22,16 @@ final class EnrollmentController extends Controller
 
     public function transfer(Request $request, Enrollment $enrollment, EnrollmentService $service): JsonResponse
     {
-        $validated = $request->validate(['cohort_id' => ['required', 'exists:cohorts,id']]);
-        $replacement = $service->transfer($enrollment, (int) $validated['cohort_id'], $request->user());
+        $validated = $request->validate([
+            'cohort_id' => ['required', 'exists:cohorts,id'],
+            'reason' => ['required', 'string', 'max:2000'],
+        ]);
+        $replacement = $service->transfer(
+            $enrollment,
+            (int) $validated['cohort_id'],
+            $validated['reason'],
+            $request->user(),
+        );
 
         return response()->json(['success' => true, 'data' => $replacement], 201);
     }

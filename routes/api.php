@@ -22,7 +22,12 @@ Route::prefix('v1')->group(function () {
             return $request->user();
         });
         Route::middleware('permission:trainees.view')->get('/trainees', [TraineeController::class, 'index']);
-        Route::middleware('permission:trainees.manage')->post('/trainees', [TraineeController::class, 'store']);
+        Route::middleware('permission:trainees.view')->get('/trainees/{trainee}', [TraineeController::class, 'show']);
+        Route::middleware('permission:trainees.manage')->group(function () {
+            Route::post('/trainees', [TraineeController::class, 'store']);
+            Route::put('/trainees/{trainee}', [TraineeController::class, 'update']);
+            Route::delete('/trainees/{trainee}', [TraineeController::class, 'destroy']);
+        });
         Route::middleware('permission:enrollments.manage')->post('/staff/enrollments', [StaffEnrollmentController::class, 'store']);
         Route::middleware('permission:enrollments.transfer')->post('/staff/enrollments/{enrollment}/transfer', [StaffEnrollmentController::class, 'transfer']);
 

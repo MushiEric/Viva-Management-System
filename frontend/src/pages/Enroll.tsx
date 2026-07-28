@@ -33,7 +33,7 @@ export default function Enroll() {
     });
 
     const timetable = useQuery({ queryKey: ['timetable'], queryFn: api.getTimetable });
-    const trainees = useQuery({ queryKey: ['trainees'], queryFn: api.getTrainees });
+    const trainees = useQuery({ queryKey: ['trainees'], queryFn: () => api.getTrainees() });
 
     const createTrainee = useMutation({
         mutationFn: () => api.createTrainee({

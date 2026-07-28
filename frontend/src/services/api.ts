@@ -85,8 +85,9 @@ export const api = {
         return handleResponse(response);
     },
 
-    async getTrainees(): Promise<ApiResponse> {
-        const response = await fetch(`${BASE_URL}/trainees`, {
+    async getTrainees(search = ''): Promise<ApiResponse> {
+        const query = search ? `?search=${encodeURIComponent(search)}` : '';
+        const response = await fetch(`${BASE_URL}/trainees${query}`, {
             headers: getHeaders(true),
         });
         return handleResponse(response);
@@ -97,6 +98,39 @@ export const api = {
             method: 'POST',
             headers: getHeaders(true),
             body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async getTrainee(traineeId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/trainees/${traineeId}`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async updateTrainee(traineeId: number, payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/trainees/${traineeId}`, {
+            method: 'PUT',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async deactivateTrainee(traineeId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/trainees/${traineeId}`, {
+            method: 'DELETE',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async transferEnrollment(enrollmentId: number, cohortId: number, reason: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/staff/enrollments/${enrollmentId}/transfer`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify({ cohort_id: cohortId, reason }),
         });
         return handleResponse(response);
     },

@@ -49,4 +49,52 @@ final readonly class TraineeRegistrationService
             return $trainee->load('emergencyContact');
         });
     }
+
+    public function update(Trainee $trainee, array $data, User $actor): Trainee
+    {
+        return DB::transaction(function () use ($trainee, $data, $actor) {
+            $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
+            $emergency = $data['emergency_contact'] ?? null;
+
+            if ($isMinor && empty($emergency)) {
+                throw new DomainException('Emergency contact information is required for a minor.');
+            }
+
+            $before = $trainee->load('emergencyContact')->toArray();
+            $trainee->update([
+                'full_name' => $data['full_name'],
+                'date_of_birth' => $data['date_of_birth'],
+                'gender' => $data['gender'],
+                'phone' => $data['phone'] ?? null,
+                'email' => $data['email'] ?? null,
+                'address' => $data['address'] ?? null,
+                'occupation' => $data['occupation'] ?? null,
+            ]);
+
+            if ($emergency) {
+                $trainee->emergencyContact()->updateOrCreate([], $emergency);
+            } elseif (!$isMinor) {
+                $trainee->emergencyContact()->delete();
+            }
+
+            $this->audit->record($actor, 'trainee.updated', $trainee, $before, $trainee->fresh()->load('emergencyContact')->toArray());
+
+            return $trainee->fresh()->load('emergencyContact');
+        });
+    }
+
+    public function deactivate(Trainee $trainee, User $actor): void
+    {
+        $activeEnrollment = $trainee->enrollments()
+            ->whereIn('status', ['pending', 'active', 'ongoing'])
+            ->exists();
+
+        if ($activeEnrollment) {
+            throw new DomainException('A trainee with an active enrollment cannot be deactivated.');
+        }
+
+        $before = $trainee->toArray();
+        $trainee->delete();
+        $this->audit->record($actor, 'trainee.deactivated', $trainee, $before, $trainee->toArray());
+    }
 }
