@@ -49,6 +49,24 @@ function getHeaders(requireAuth = true): HeadersInit {
     return headers;
 }
 
+async function downloadAuthenticated(path: string, filename: string): Promise<void> {
+    const response = await fetch(`${BASE_URL}${path}`, {
+        headers: {
+            'Accept': 'application/octet-stream',
+            ...(localStorage.getItem('viva_auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('viva_auth_token')}` } : {}),
+        },
+    });
+    if (!response.ok) {
+        throw new Error('Download failed.');
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 export const api = {
     /**
      * Issue authentication token (login).
@@ -398,6 +416,53 @@ export const api = {
             body: JSON.stringify({ reason }),
         });
         return handleResponse(response);
+    },
+
+    async getCertificates(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/certificates`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async issueCertificate(enrollmentId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/certificates/enrollments/${enrollmentId}`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    downloadCertificate(certificateId: number, number: string): Promise<void> {
+        return downloadAuthenticated(`/certificates/${certificateId}/download`, `${number}.pdf`);
+    },
+
+    async getLearningMaterials(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning-materials`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async uploadLearningMaterial(programId: number, formData: FormData): Promise<ApiResponse> {
+        const token = localStorage.getItem('viva_auth_token');
+        const response = await fetch(`${BASE_URL}/programs/${programId}/learning-materials`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: formData,
+        });
+        return handleResponse(response);
+    },
+
+    async deactivateLearningMaterial(materialId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning-materials/${materialId}`, {
+            method: 'DELETE',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    downloadLearningMaterial(materialId: number, title: string): Promise<void> {
+        return downloadAuthenticated(`/learning-materials/${materialId}/download`, title);
     },
 
     /**

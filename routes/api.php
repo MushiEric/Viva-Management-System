@@ -11,6 +11,8 @@ use App\Modules\Training\Http\Controllers\ProgramController;
 use App\Modules\Training\Http\Controllers\CohortController;
 use App\Modules\Learning\Http\Controllers\LearningController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
+use App\Modules\Certification\Http\Controllers\CertificateController;
+use App\Modules\Training\Http\Controllers\LearningMaterialController;
 
 Route::prefix('v1')->group(function () {
     // Authentication token endpoint
@@ -94,5 +96,21 @@ Route::prefix('v1')->group(function () {
         });
         Route::middleware('permission:discounts.approve')->post('/finance/discounts/{discount}/approve', [FinanceController::class, 'approveDiscount']);
         Route::middleware('permission:payments.cancel')->post('/finance/payments/{payment}/cancel', [FinanceController::class, 'cancelPayment']);
+
+        Route::middleware('permission:certificates.issue')->group(function () {
+            Route::get('/certificates', [CertificateController::class, 'index']);
+            Route::post('/certificates/enrollments/{enrollment}', [CertificateController::class, 'issue']);
+            Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download']);
+        });
+
+        Route::middleware('permission:programs.view')->group(function () {
+            Route::get('/learning-materials', [LearningMaterialController::class, 'index']);
+            Route::get('/learning-materials/{material}/download', [LearningMaterialController::class, 'download']);
+        });
+        Route::middleware('permission:materials.manage')->group(function () {
+            Route::post('/programs/{program}/learning-materials', [LearningMaterialController::class, 'store']);
+            Route::post('/learning-materials/{material}', [LearningMaterialController::class, 'update']);
+            Route::delete('/learning-materials/{material}', [LearningMaterialController::class, 'destroy']);
+        });
     });
 });

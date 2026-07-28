@@ -12,7 +12,8 @@ import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
 import Learning from './pages/Learning';
 import Finance from './pages/Finance';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards } from 'lucide-react';
+import Resources from './pages/Resources';
+import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,10 @@ function NavigationLayout() {
                                         <span>Finance</span>
                                     </Link>
                                 )}
+                                <Link to="/resources" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                    <FolderOpen className="h-4 w-4" />
+                                    <span>Resources</span>
+                                </Link>
                                 {(user?.role === 'manager' || user?.role === 'admin') && (
                                     <Link to="/staff" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
                                         <UsersRound className="h-4 w-4" />
@@ -145,6 +150,14 @@ function NavigationLayout() {
                         element={
                             <ProtectedRoute>
                                 <Staff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/resources"
+                        element={
+                            <ProtectedRoute>
+                                <Resources />
                             </ProtectedRoute>
                         }
                     />

@@ -36,4 +36,9 @@ class Program extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function materials(): HasMany
+    {
+        return $this->hasMany(LearningMaterial::class);
+    }
 }
