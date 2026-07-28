@@ -10,6 +10,7 @@ use App\Modules\Identity\Http\Controllers\StaffController;
 use App\Modules\Training\Http\Controllers\ProgramController;
 use App\Modules\Training\Http\Controllers\CohortController;
 use App\Modules\Learning\Http\Controllers\LearningController;
+use App\Modules\Finance\Http\Controllers\FinanceController;
 
 Route::prefix('v1')->group(function () {
     // Authentication token endpoint
@@ -82,5 +83,16 @@ Route::prefix('v1')->group(function () {
             Route::patch('/learning/enrollments/{enrollment}/progress', [LearningController::class, 'progress']);
         });
         Route::middleware('permission:enrollments.complete')->post('/learning/enrollments/{enrollment}/complete', [LearningController::class, 'complete']);
+
+        Route::middleware('permission:finance.view')->get('/finance', [FinanceController::class, 'index']);
+        Route::middleware('permission:finance.manage')->group(function () {
+            Route::post('/finance/invoices', [FinanceController::class, 'createInvoice']);
+            Route::post('/finance/invoices/{invoice}/issue', [FinanceController::class, 'issueInvoice']);
+            Route::post('/finance/invoices/{invoice}/discounts', [FinanceController::class, 'requestDiscount']);
+            Route::post('/finance/payments', [FinanceController::class, 'recordPayment']);
+            Route::post('/finance/invoices/{invoice}/cancel', [FinanceController::class, 'cancelInvoice']);
+        });
+        Route::middleware('permission:discounts.approve')->post('/finance/discounts/{discount}/approve', [FinanceController::class, 'approveDiscount']);
+        Route::middleware('permission:payments.cancel')->post('/finance/payments/{payment}/cancel', [FinanceController::class, 'cancelPayment']);
     });
 });

@@ -44,4 +44,14 @@ class Invoice extends Model
     {
         return $this->hasMany(InvoiceItem::class);
     }
+
+    public function discountRequests(): HasMany
+    {
+        return $this->hasMany(DiscountRequest::class);
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
 }

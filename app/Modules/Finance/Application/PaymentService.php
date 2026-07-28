@@ -35,6 +35,16 @@ final readonly class PaymentService
         ?string $reference = null,
     ): Payment {
         return DB::transaction(function () use ($trainee, $amount, $method, $invoiceAllocations, $actor, $provider, $reference) {
+            if (!in_array($method, ['cash', 'mobile_money'], true)) {
+                throw new DomainException('Payment method must be cash or mobile money.');
+            }
+            if ($method === 'mobile_money' && (!$provider || !$reference)) {
+                throw new DomainException('Mobile money provider and reference number are required.');
+            }
+            if ($amount <= 0) {
+                throw new DomainException('Payment amount must be greater than zero.');
+            }
+
             $allocated = array_sum(array_map('floatval', $invoiceAllocations));
             if (round($allocated, 2) !== round($amount, 2)) {
                 throw new DomainException('Payment allocations must equal the payment amount.');
@@ -55,6 +65,13 @@ final readonly class PaymentService
 
             foreach ($invoiceAllocations as $invoiceId => $allocationAmount) {
                 $invoice = Invoice::lockForUpdate()->where('trainee_id', $trainee->id)->findOrFail($invoiceId);
+                if (!in_array($invoice->status, ['issued', 'partially_paid', 'overdue'], true)) {
+                    throw new DomainException('Payments can only be allocated to an issued invoice.');
+                }
+                $outstanding = (float) $invoice->total - (float) $invoice->amount_paid;
+                if ((float) $allocationAmount <= 0 || (float) $allocationAmount > $outstanding) {
+                    throw new DomainException('Payment allocation exceeds the invoice outstanding balance.');
+                }
                 $payment->allocations()->create(['invoice_id' => $invoice->id, 'amount' => $allocationAmount]);
                 $paid = (float) $invoice->amount_paid + (float) $allocationAmount;
                 $invoice->update([

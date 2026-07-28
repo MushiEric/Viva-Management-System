@@ -343,6 +343,63 @@ export const api = {
         return handleResponse(response);
     },
 
+    async getFinance(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async createInvoice(payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/invoices`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async issueInvoice(invoiceId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/invoices/${invoiceId}/issue`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async requestDiscount(invoiceId: number, amount: number, reason: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/invoices/${invoiceId}/discounts`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify({ amount, reason }),
+        });
+        return handleResponse(response);
+    },
+
+    async approveDiscount(discountId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/discounts/${discountId}/approve`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async recordPayment(payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/payments`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async cancelPayment(paymentId: number, reason: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/payments/${paymentId}/cancel`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify({ reason }),
+        });
+        return handleResponse(response);
+    },
+
     /**
      * Get authenticated user profile.
      */

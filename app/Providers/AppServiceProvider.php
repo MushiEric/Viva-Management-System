@@ -21,6 +21,10 @@ use App\Modules\Training\Domain\Events\ProgramChangesRequested;
 use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
 use App\Modules\Communication\Listeners\NotifyFacilitatorsOfCohortSchedule;
 use App\Modules\Training\Domain\Events\CohortScheduled;
+use App\Modules\Communication\Listeners\SendInvoiceEmail;
+use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
+use App\Modules\Finance\Domain\Events\InvoiceIssued;
+use App\Modules\Finance\Domain\Events\DiscountApproved;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -46,5 +50,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ProgramApproved::class, NotifyProgramCreatorOfApproval::class);
         Event::listen(ProgramChangesRequested::class, NotifyProgramCreatorOfChanges::class);
         Event::listen(CohortScheduled::class, NotifyFacilitatorsOfCohortSchedule::class);
+        Event::listen(InvoiceIssued::class, SendInvoiceEmail::class);
+        Event::listen(DiscountApproved::class, SendDiscountApprovalEmail::class);
     }
 }

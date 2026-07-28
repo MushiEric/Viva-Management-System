@@ -11,7 +11,8 @@ import Programs from './pages/Programs';
 import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
 import Learning from './pages/Learning';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap } from 'lucide-react';
+import Finance from './pages/Finance';
+import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,12 @@ function NavigationLayout() {
                                     <span>Learning</span>
                                 </Link>
                                 {(user?.role === 'manager' || user?.role === 'admin') && (
+                                    <Link to="/finance" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                        <WalletCards className="h-4 w-4" />
+                                        <span>Finance</span>
+                                    </Link>
+                                )}
+                                {(user?.role === 'manager' || user?.role === 'admin') && (
                                     <Link to="/staff" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
                                         <UsersRound className="h-4 w-4" />
                                         <span>Staff</span>
@@ -138,6 +145,14 @@ function NavigationLayout() {
                         element={
                             <ProtectedRoute>
                                 <Staff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/finance"
+                        element={
+                            <ProtectedRoute>
+                                <Finance />
                             </ProtectedRoute>
                         }
                     />
