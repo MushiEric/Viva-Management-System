@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Cohort;
+use Illuminate\Http\Request;
+
+class TimetableController extends Controller
+{
+    /**
+     * Get JSON list of active timetables.
+     */
+    public function index()
+    {
+        $cohorts = Cohort::where('is_active', true)
+            ->with(['course.parent', 'programLevel.program', 'scheduleDays', 'facilitators:id,name'])
+            ->withCount(['enrollments' => fn ($query) => $query->whereIn('status', ['pending', 'active', 'ongoing'])])
+            ->get()
+            ->map(function ($cohort) {
+                $enrolled = $cohort->enrollments_count;
+                $total = $cohort->max_seats;
+                $available = max(0, $total - $enrolled);
+
+                $level = $cohort->programLevel;
+                $legacyCourse = $cohort->course;
+
+                return [
+                    'cohort_id' => $cohort->id,
+                    'cohort_name' => $cohort->name,
+                    'schedule_window' => $cohort->schedule_window,
+                    'start_date' => $cohort->start_date,
+                    'end_date' => $cohort->end_date,
+                    'default_start_time' => $cohort->default_start_time,
+                    'default_end_time' => $cohort->default_end_time,
+                    'schedule_days' => $cohort->scheduleDays->map(fn ($day) => [
+                        'day_of_week' => $day->day_of_week,
+                        'day_name' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][$day->day_of_week - 1],
+                        'start_time' => $day->start_time,
+                        'end_time' => $day->end_time,
+                    ]),
+                    'facilitators' => $cohort->facilitators->map->only(['id', 'name']),
+                    'course' => [
+                        'id' => $level?->id ?? $legacyCourse?->id,
+                        'name' => $level?->name ?? $legacyCourse?->name,
+                        'is_module' => (bool) ($level || $legacyCourse?->parent_id),
+                        'parent_course' => $level?->program?->name ?? $legacyCourse?->parent?->name,
+                        'fee_tzs' => $level?->fee_tzs,
+                    ],
+                    'capacity' => [
+                        'max_seats' => $total,
+                        'occupied_seats' => $enrolled,
+                        'available_seats' => $available,
+                        'status' => $available > 0 ? 'available' : 'full',
+                    ]
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $cohorts
+        ]);
+    }
+}
