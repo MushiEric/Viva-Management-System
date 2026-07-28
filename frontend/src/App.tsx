@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
@@ -15,7 +15,7 @@ import Learning from './pages/Learning';
 import Finance from './pages/Finance';
 import Resources from './pages/Resources';
 import Dashboard from './pages/Dashboard';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard } from 'lucide-react';
+import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, X } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -32,12 +32,23 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
     return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>;
 }
 
-/**
- * Navbar Layout Component.
- */
 function NavigationLayout() {
     const { user, isAuthenticated, logout } = useAuthStore();
     const navigate = useNavigate();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const isOfficeAdmin = user?.role === 'manager' || user?.role === 'admin';
+    const navigationItems = [
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, visible: true },
+        { to: '/timetable', label: 'Timetable', icon: Calendar, visible: true },
+        { to: '/enroll', label: 'Enroll Student', icon: BookOpen, visible: true },
+        { to: '/programs', label: 'Programs', icon: LibraryBig, visible: true },
+        { to: '/trainees', label: 'Trainees', icon: ContactRound, visible: true },
+        { to: '/learning', label: 'Learning', icon: GraduationCap, visible: true },
+        { to: '/finance', label: 'Finance', icon: WalletCards, visible: isOfficeAdmin },
+        { to: '/resources', label: 'Resources', icon: FolderOpen, visible: true },
+        { to: '/staff', label: 'Staff', icon: UsersRound, visible: isOfficeAdmin },
+        { to: '/cohorts', label: 'Cohorts', icon: CalendarRange, visible: isOfficeAdmin },
+    ];
 
     const handleLogout = async () => {
         try {
@@ -49,190 +60,112 @@ function NavigationLayout() {
     };
 
     return (
-        <div className="min-height-screen flex flex-col bg-slate-50 text-ink">
-            {/* Premium Header/Navbar */}
-            <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-                <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-                    {/* Branding Logo */}
-                    <Link to="/timetable" className="shrink-0 transition-opacity hover:opacity-90" aria-label="Viva Digital Center">
-                        <img
-                            src="/viva_logo.jpeg"
-                            alt="Viva Digital Center"
-                            className="h-14 w-auto object-contain"
+        <div className={`min-h-screen bg-slate-50 text-ink ${isAuthenticated ? 'lg:flex' : ''}`}>
+            {isAuthenticated ? (
+                <>
+                    {sidebarOpen && (
+                        <button
+                            type="button"
+                            aria-label="Close navigation"
+                            className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden"
+                            onClick={() => setSidebarOpen(false)}
                         />
-                    </Link>
+                    )}
+                    <aside className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="flex h-24 items-center justify-between border-b border-slate-100 px-6">
+                            <Link to="/dashboard" onClick={() => setSidebarOpen(false)} aria-label="Viva Digital Center">
+                                <img src="/viva_logo.jpeg" alt="Viva Digital Center" className="h-16 w-auto object-contain" />
+                            </Link>
+                            <button type="button" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
 
-                    {/* Navigation Items */}
-                    <div className="flex items-center gap-6">
+                        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+                            <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Workspace</p>
+                            {navigationItems.filter((item) => item.visible).map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <NavLink
+                                        key={item.to}
+                                        to={item.to}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-2.5 font-display text-sm font-semibold transition-colors ${isActive ? 'bg-viva-blue text-white shadow-md shadow-viva-blue/20' : 'text-slate-600 hover:bg-slate-100 hover:text-viva-blue'}`}
+                                    >
+                                        <Icon className="h-5 w-5 shrink-0" />
+                                        <span>{item.label}</span>
+                                    </NavLink>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="border-t border-slate-100 p-4">
+                            <div className="mb-3 rounded-xl bg-slate-50 px-3 py-3">
+                                <p className="truncate text-sm font-bold text-ink">{user?.name}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{user?.role}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+                            >
+                                <LogOut className="h-5 w-5" />
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </aside>
+                </>
+            ) : (
+                <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+                    <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+                    <Link to="/timetable" className="shrink-0 transition-opacity hover:opacity-90" aria-label="Viva Digital Center">
+                            <img src="/viva_logo.jpeg" alt="Viva Digital Center" className="h-14 w-auto object-contain" />
+                    </Link>
                         <Link to="/timetable" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
                             <Calendar className="h-4 w-4" />
                             <span>Timetable</span>
                         </Link>
+                        <Link to="/login" className="flex items-center gap-1.5 rounded-full bg-viva-blue px-4 py-2 font-display text-sm font-bold text-white shadow-md shadow-viva-blue/20 transition-all hover:bg-slate-900 hover:shadow-none">
+                            <LogIn className="h-4 w-4" />
+                            <span>Login</span>
+                        </Link>
+                    </nav>
+                </header>
+            )}
 
-                        {isAuthenticated ? (
-                            <>
-                                <Link to="/dashboard" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <LayoutDashboard className="h-4 w-4" />
-                                    <span>Dashboard</span>
-                                </Link>
-                                <Link to="/enroll" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <BookOpen className="h-4 w-4" />
-                                    <span>Enroll Student</span>
-                                </Link>
-                                <Link to="/programs" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <LibraryBig className="h-4 w-4" />
-                                    <span>Programs</span>
-                                </Link>
-                                <Link to="/trainees" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <ContactRound className="h-4 w-4" />
-                                    <span>Trainees</span>
-                                </Link>
-                                <Link to="/learning" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <GraduationCap className="h-4 w-4" />
-                                    <span>Learning</span>
-                                </Link>
-                                {(user?.role === 'manager' || user?.role === 'admin') && (
-                                    <Link to="/finance" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                        <WalletCards className="h-4 w-4" />
-                                        <span>Finance</span>
-                                    </Link>
-                                )}
-                                <Link to="/resources" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                    <FolderOpen className="h-4 w-4" />
-                                    <span>Resources</span>
-                                </Link>
-                                {(user?.role === 'manager' || user?.role === 'admin') && (
-                                    <Link to="/staff" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                        <UsersRound className="h-4 w-4" />
-                                        <span>Staff</span>
-                                    </Link>
-                                )}
-                                {(user?.role === 'manager' || user?.role === 'admin') && (
-                                    <Link to="/cohorts" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                                        <CalendarRange className="h-4 w-4" />
-                                        <span>Cohorts</span>
-                                    </Link>
-                                )}
-                                <div className="h-4 w-px bg-slate-200" />
-                                <div className="flex items-center gap-3">
-                                    <div className="flex flex-col text-right">
-                                        <span className="text-xs font-bold text-ink">{user?.name}</span>
-                                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{user?.role}</span>
-                                    </div>
-                                    <button 
-                                        onClick={handleLogout} 
-                                        className="flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50/50 transition-colors"
-                                        title="Logout"
-                                    >
-                                        <LogOut className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <Link to="/login" className="flex items-center gap-1.5 rounded-full bg-viva-blue px-4 py-2 font-display text-sm font-bold text-white shadow-md shadow-viva-blue/20 transition-all hover:bg-slate-900 hover:shadow-none">
-                                    <LogIn className="h-4 w-4 inline mr-1" />
-                                    <span>Login</span>
-                                </Link>
-                            </>
-                        )}
-                    </div>
-                </nav>
-            </header>
+            <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+                {isAuthenticated && (
+                    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md lg:hidden">
+                        <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-xl border border-slate-200 p-2 text-slate-600" aria-label="Open sidebar">
+                            <Menu className="h-5 w-5" />
+                        </button>
+                        <img src="/viva_logo.jpeg" alt="Viva Digital Center" className="h-12 w-auto object-contain" />
+                        <div className="w-10 text-right text-xs font-bold uppercase text-slate-500">{user?.role}</div>
+                    </header>
+                )}
 
-            {/* Content Container */}
-            <main className="mx-auto w-full max-w-6xl px-6 py-10 flex-grow">
-                <Routes>
-                    <Route path="/" element={<Navigate to="/timetable" replace />} />
-                    <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute>
-                                <Dashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="/timetable" element={<Timetable />} />
-                    <Route
-                        path="/login"
-                        element={
-                            <GuestRoute>
-                                <Login />
-                            </GuestRoute>
-                        }
-                    />
-                    <Route 
-                        path="/enroll" 
-                        element={
-                            <ProtectedRoute>
-                                <Enroll />
-                            </ProtectedRoute>
-                        } 
-                    />
-                    <Route
-                        path="/staff"
-                        element={
-                            <ProtectedRoute>
-                                <Staff />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/resources"
-                        element={
-                            <ProtectedRoute>
-                                <Resources />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/finance"
-                        element={
-                            <ProtectedRoute>
-                                <Finance />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/learning"
-                        element={
-                            <ProtectedRoute>
-                                <Learning />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/trainees"
-                        element={
-                            <ProtectedRoute>
-                                <Trainees />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/cohorts"
-                        element={
-                            <ProtectedRoute>
-                                <Cohorts />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/programs"
-                        element={
-                            <ProtectedRoute>
-                                <Programs />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="*" element={<Navigate to="/timetable" replace />} />
-                </Routes>
-            </main>
+                <main className="mx-auto w-full max-w-7xl flex-grow px-4 py-8 sm:px-6 lg:px-8">
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/timetable" replace />} />
+                        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/timetable" element={<Timetable />} />
+                        <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                        <Route path="/enroll" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
+                        <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+                        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+                        <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+                        <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
+                        <Route path="/trainees" element={<ProtectedRoute><Trainees /></ProtectedRoute>} />
+                        <Route path="/cohorts" element={<ProtectedRoute><Cohorts /></ProtectedRoute>} />
+                        <Route path="/programs" element={<ProtectedRoute><Programs /></ProtectedRoute>} />
+                        <Route path="*" element={<Navigate to="/timetable" replace />} />
+                    </Routes>
+                </main>
 
-            {/* Footer */}
-            <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-                <p>&copy; {new Date().getFullYear()} Viva Digital Center. Dar es Salaam, Tanzania. All rights reserved.</p>
-            </footer>
+                <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-400">
+                    <p>&copy; {new Date().getFullYear()} Viva Digital Center. Dar es Salaam, Tanzania. All rights reserved.</p>
+                </footer>
+            </div>
         </div>
     );
 }
