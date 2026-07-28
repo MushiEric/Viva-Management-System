@@ -280,6 +280,69 @@ export const api = {
         return handleResponse(response);
     },
 
+    async getLearningEnrollments(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async getLearningEnrollment(enrollmentId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async addAssessment(enrollmentId: number, payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/assessments`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async addPracticalWork(enrollmentId: number, payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/practical-work`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async addLearningNote(enrollmentId: number, note: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/notes`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify({ note }),
+        });
+        return handleResponse(response);
+    },
+
+    async recordAttendance(enrollmentId: number, payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/attendance`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async updateLearningProgress(enrollmentId: number, percentage: number, status: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/progress`, {
+            method: 'PATCH',
+            headers: getHeaders(true),
+            body: JSON.stringify({ percentage, status }),
+        });
+        return handleResponse(response);
+    },
+
+    async completeEnrollment(enrollmentId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/learning/enrollments/${enrollmentId}/complete`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
     /**
      * Get authenticated user profile.
      */

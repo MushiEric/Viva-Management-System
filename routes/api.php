@@ -9,6 +9,7 @@ use App\Modules\Enrollment\Http\Controllers\EnrollmentController as StaffEnrollm
 use App\Modules\Identity\Http\Controllers\StaffController;
 use App\Modules\Training\Http\Controllers\ProgramController;
 use App\Modules\Training\Http\Controllers\CohortController;
+use App\Modules\Learning\Http\Controllers\LearningController;
 
 Route::prefix('v1')->group(function () {
     // Authentication token endpoint
@@ -68,5 +69,18 @@ Route::prefix('v1')->group(function () {
             Route::put('/cohorts/{cohort}', [CohortController::class, 'update']);
             Route::delete('/cohorts/{cohort}', [CohortController::class, 'destroy']);
         });
+
+        Route::middleware('permission:trainees.view')->group(function () {
+            Route::get('/learning/enrollments', [LearningController::class, 'index']);
+            Route::get('/learning/enrollments/{enrollment}', [LearningController::class, 'show']);
+        });
+        Route::middleware('permission:learning.record')->group(function () {
+            Route::post('/learning/enrollments/{enrollment}/assessments', [LearningController::class, 'assessment']);
+            Route::post('/learning/enrollments/{enrollment}/practical-work', [LearningController::class, 'practicalWork']);
+            Route::post('/learning/enrollments/{enrollment}/notes', [LearningController::class, 'note']);
+            Route::post('/learning/enrollments/{enrollment}/attendance', [LearningController::class, 'attendance']);
+            Route::patch('/learning/enrollments/{enrollment}/progress', [LearningController::class, 'progress']);
+        });
+        Route::middleware('permission:enrollments.complete')->post('/learning/enrollments/{enrollment}/complete', [LearningController::class, 'complete']);
     });
 });

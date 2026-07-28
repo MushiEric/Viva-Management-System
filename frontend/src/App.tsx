@@ -10,7 +10,8 @@ import Staff from './pages/Staff';
 import Programs from './pages/Programs';
 import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound } from 'lucide-react';
+import Learning from './pages/Learning';
+import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,10 @@ function NavigationLayout() {
                                     <ContactRound className="h-4 w-4" />
                                     <span>Trainees</span>
                                 </Link>
+                                <Link to="/learning" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                    <GraduationCap className="h-4 w-4" />
+                                    <span>Learning</span>
+                                </Link>
                                 {(user?.role === 'manager' || user?.role === 'admin') && (
                                     <Link to="/staff" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
                                         <UsersRound className="h-4 w-4" />
@@ -133,6 +138,14 @@ function NavigationLayout() {
                         element={
                             <ProtectedRoute>
                                 <Staff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/learning"
+                        element={
+                            <ProtectedRoute>
+                                <Learning />
                             </ProtectedRoute>
                         }
                     />

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Modules\Learning\Infrastructure\Models\Assessment;
+use App\Modules\Learning\Infrastructure\Models\PracticalWork;
+use App\Modules\Learning\Infrastructure\Models\EnrollmentNote;
+use App\Modules\Learning\Infrastructure\Models\AttendanceRecord;
 
 class Enrollment extends Model
 {
@@ -50,5 +55,25 @@ class Enrollment extends Model
     public function trainee(): BelongsTo
     {
         return $this->belongsTo(Trainee::class);
+    }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    public function practicalWorks(): HasMany
+    {
+        return $this->hasMany(PracticalWork::class);
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(EnrollmentNote::class);
+    }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
     }
 }
