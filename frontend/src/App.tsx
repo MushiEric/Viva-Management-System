@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate } from 'react
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
+import { api } from './services/api';
 import Login from './pages/Login';
 import Timetable from './pages/Timetable';
 import Enroll from './pages/Enroll';
@@ -33,9 +34,13 @@ function NavigationLayout() {
     const { user, isAuthenticated, logout } = useAuthStore();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
+    const handleLogout = async () => {
+        try {
+            await api.logout();
+        } finally {
+            logout();
+            navigate('/login');
+        }
     };
 
     return (

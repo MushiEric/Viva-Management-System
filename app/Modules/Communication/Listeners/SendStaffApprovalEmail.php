@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Identity\Domain\Events\StaffAccountApproved;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class SendStaffApprovalEmail implements ShouldQueue
+final class SendStaffApprovalEmail implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

@@ -5,6 +5,7 @@ namespace App\Modules\Identity\Http\Requests;
 use App\Modules\Identity\Domain\StaffRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class StoreStaffRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class StoreStaffRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'role' => ['required', Rule::enum(StaffRole::class)],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
         ];
     }
 }

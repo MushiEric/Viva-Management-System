@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Training\Domain\Events\CohortScheduled;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class NotifyFacilitatorsOfCohortSchedule implements ShouldQueue
+final class NotifyFacilitatorsOfCohortSchedule implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

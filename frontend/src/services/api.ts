@@ -494,5 +494,13 @@ export const api = {
             headers: getHeaders(true),
         });
         return handleResponse(response);
+    },
+
+    async logout(): Promise<void> {
+        const response = await fetch(`${BASE_URL}/logout`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        await handleResponse(response);
     }
 };

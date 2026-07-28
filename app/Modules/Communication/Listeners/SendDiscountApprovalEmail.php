@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Finance\Domain\Events\DiscountApproved;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class SendDiscountApprovalEmail implements ShouldQueue
+final class SendDiscountApprovalEmail implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

@@ -4,11 +4,11 @@ namespace App\Listeners;
 
 use App\Events\StudentRegistered;
 use App\Mail\WelcomeNotification;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-class SendWelcomeEmail implements ShouldQueue
+class SendWelcomeEmail implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

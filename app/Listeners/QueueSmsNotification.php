@@ -3,12 +3,12 @@
 namespace App\Listeners;
 
 use App\Events\StudentRegistered;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
-class QueueSmsNotification implements ShouldQueue
+class QueueSmsNotification implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

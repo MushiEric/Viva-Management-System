@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Finance\Domain\Events\InvoiceIssued;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class SendInvoiceEmail implements ShouldQueue
+final class SendInvoiceEmail implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

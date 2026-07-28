@@ -51,8 +51,8 @@ class StaffManagementTest extends TestCase
             'email' => 'facilitator@example.com',
             'phone' => '0784000000',
             'role' => 'facilitator',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'StrongPass123!',
+            'password_confirmation' => 'StrongPass123!',
         ]);
 
         $response->assertCreated()->assertJsonPath('data.status', 'pending');

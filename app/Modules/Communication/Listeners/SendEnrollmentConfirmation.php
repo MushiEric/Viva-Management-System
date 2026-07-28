@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class SendEnrollmentConfirmation implements ShouldQueue
+final class SendEnrollmentConfirmation implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

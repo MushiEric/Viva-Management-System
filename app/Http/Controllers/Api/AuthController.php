@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -49,37 +50,10 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Register a new student user and return a Sanctum access token.
-     */
-    public function register(Request $request)
+    public function logout(Request $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email|max:255',
-            'password' => 'required|string|min:8',
-            'phone' => 'nullable|string|max:20',
-        ]);
+        $request->user()->currentAccessToken()?->delete();
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'role' => 'student', // default self-registered role
-        ]);
-
-        $token = $user->createToken('flutter-app')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role,
-                'email' => $user->email,
-            ]
-        ], 201);
+        return response()->json(['success' => true, 'message' => 'Logged out successfully.']);
     }
 }

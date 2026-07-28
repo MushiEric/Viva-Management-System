@@ -3,10 +3,10 @@
 namespace App\Modules\Certification\Listeners;
 
 use App\Modules\Learning\Domain\Events\EnrollmentCompleted;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 
-final class IssueCertificateOnCompletion implements ShouldQueue
+final class IssueCertificateOnCompletion implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

@@ -25,6 +25,11 @@ use App\Modules\Communication\Listeners\SendInvoiceEmail;
 use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
 use App\Modules\Finance\Domain\Events\InvoiceIssued;
 use App\Modules\Finance\Domain\Events\DiscountApproved;
+use App\Modules\Communication\Domain\Events\ClassReminderDue;
+use App\Modules\Communication\Listeners\SendClassReminderEmail;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -42,6 +47,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip());
+        });
+
         Event::listen(TraineeEnrolled::class, SendEnrollmentConfirmation::class);
         Event::listen(PaymentRecorded::class, SendPaymentConfirmation::class);
         Event::listen(EnrollmentCompleted::class, IssueCertificateOnCompletion::class);
@@ -52,5 +64,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(CohortScheduled::class, NotifyFacilitatorsOfCohortSchedule::class);
         Event::listen(InvoiceIssued::class, SendInvoiceEmail::class);
         Event::listen(DiscountApproved::class, SendDiscountApprovalEmail::class);
+        Event::listen(ClassReminderDue::class, SendClassReminderEmail::class);
     }
 }

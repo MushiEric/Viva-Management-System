@@ -16,9 +16,9 @@ use App\Modules\Training\Http\Controllers\LearningMaterialController;
 use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\Audit\Http\Controllers\AuditLogController;
 
-Route::prefix('v1')->group(function () {
+Route::middleware('throttle:api')->prefix('v1')->group(function () {
     // Authentication token endpoint
-    Route::post('/token', [AuthController::class, 'issueToken']);
+    Route::middleware('throttle:login')->post('/token', [AuthController::class, 'issueToken']);
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
 
@@ -27,6 +27,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+        Route::post('/logout', [AuthController::class, 'logout']);
         Route::middleware('permission:trainees.view')->get('/trainees', [TraineeController::class, 'index']);
         Route::middleware('permission:trainees.view')->get('/trainees/{trainee}', [TraineeController::class, 'show']);
         Route::middleware('permission:trainees.manage')->group(function () {

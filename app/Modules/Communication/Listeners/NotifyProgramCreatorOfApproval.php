@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Training\Domain\Events\ProgramApproved;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class NotifyProgramCreatorOfApproval implements ShouldQueue
+final class NotifyProgramCreatorOfApproval implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

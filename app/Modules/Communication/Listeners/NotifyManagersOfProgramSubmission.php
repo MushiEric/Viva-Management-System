@@ -4,11 +4,11 @@ namespace App\Modules\Communication\Listeners;
 
 use App\Models\User;
 use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class NotifyManagersOfProgramSubmission implements ShouldQueue
+final class NotifyManagersOfProgramSubmission implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 

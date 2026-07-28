@@ -3,11 +3,11 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Modules\Training\Domain\Events\ProgramChangesRequested;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
-final class NotifyProgramCreatorOfChanges implements ShouldQueue
+final class NotifyProgramCreatorOfChanges implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 
