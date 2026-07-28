@@ -78,7 +78,8 @@ export default function Finance() {
             items: Object.entries(invoiceAmounts)
                 .filter(([, amount]) => Number(amount) > 0)
                 .map(([enrollmentId, amount]) => {
-                    const enrollment = (traineeDetailQuery.data?.data?.trainee.enrollments as Enrollment[]).find((item) => item.id === Number(enrollmentId));
+                    const enrollments = (traineeDetailQuery.data?.data?.trainee.enrollments ?? []) as Enrollment[];
+                    const enrollment = enrollments.find((item) => item.id === Number(enrollmentId));
                     return {
                         enrollment_id: Number(enrollmentId),
                         description: `${enrollment?.cohort.program_level?.program.name || 'Program'} — ${enrollment?.cohort.program_level?.name || enrollment?.cohort.name}`,

@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             try {
                 const user = JSON.parse(userStr);
                 set({ user, token, isAuthenticated: true });
-            } catch (e) {
+            } catch {
                 // Clear corrupted items
                 localStorage.removeItem('viva_auth_token');
                 localStorage.removeItem('viva_auth_user');

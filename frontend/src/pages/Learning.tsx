@@ -21,6 +21,23 @@ interface LearningDetail extends EnrollmentSummary {
     attendance_records: Array<{ id: number; session_date: string; status: string }>;
 }
 
+function useActionMutation(
+    action: () => Promise<unknown>,
+    message: string,
+    refresh: () => void,
+    reset?: () => void,
+) {
+    return useMutation({
+        mutationFn: action,
+        onSuccess: () => {
+            refresh();
+            reset?.();
+            toast.success(message);
+        },
+        onError: (error: Error) => toast.error(error.message),
+    });
+}
+
 export default function Learning() {
     const queryClient = useQueryClient();
     const user = useAuthStore((state) => state.user);
@@ -38,30 +55,22 @@ export default function Learning() {
         queryClient.invalidateQueries({ queryKey: ['learning-enrollments'] });
         queryClient.invalidateQueries({ queryKey: ['learning-enrollment', selectedId] });
     };
-    const mutation = (action: () => Promise<any>, message: string, reset?: () => void) => useMutation({
-        mutationFn: action,
-        onSuccess: () => {
-            refresh();
-            reset?.();
-            toast.success(message);
-        },
-        onError: (error: Error) => toast.error(error.message),
-    });
-
-    const addAssessment = mutation(
+    const addAssessment = useActionMutation(
         () => api.addAssessment(selectedId!, { ...assessment, percentage: Number(assessment.percentage) }),
         'Assessment recorded.',
+        refresh,
         () => setAssessment({ title: '', percentage: '', feedback: '' }),
     );
-    const addPractical = mutation(
+    const addPractical = useActionMutation(
         () => api.addPracticalWork(selectedId!, { ...practical, percentage: practical.percentage ? Number(practical.percentage) : null }),
         'Practical work recorded.',
+        refresh,
         () => setPractical({ title: '', percentage: '', outcome: '' }),
     );
-    const addNote = mutation(() => api.addLearningNote(selectedId!, note), 'Note recorded.', () => setNote(''));
-    const addAttendance = mutation(() => api.recordAttendance(selectedId!, attendance), 'Attendance recorded.');
-    const updateProgress = mutation(() => api.updateLearningProgress(selectedId!, progress.percentage, progress.status), 'Progress updated.');
-    const complete = mutation(() => api.completeEnrollment(selectedId!), 'Enrollment completed and certificate queued.');
+    const addNote = useActionMutation(() => api.addLearningNote(selectedId!, note), 'Note recorded.', refresh, () => setNote(''));
+    const addAttendance = useActionMutation(() => api.recordAttendance(selectedId!, attendance), 'Attendance recorded.', refresh);
+    const updateProgress = useActionMutation(() => api.updateLearningProgress(selectedId!, progress.percentage, progress.status), 'Progress updated.', refresh);
+    const complete = useActionMutation(() => api.completeEnrollment(selectedId!), 'Enrollment completed and certificate queued.', refresh);
 
     const enrollments = (enrollmentsQuery.data?.data?.data || []) as EnrollmentSummary[];
     const detail = detailQuery.data?.data as LearningDetail | undefined;
