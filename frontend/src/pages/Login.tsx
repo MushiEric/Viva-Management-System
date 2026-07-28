@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -137,13 +137,9 @@ export default function Login() {
                     </button>
                 </form>
 
-                {/* Register Link */}
-                <div className="text-center mt-6 text-xs text-slate-500">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="font-semibold text-viva-blue hover:underline">
-                        Register
-                    </Link>
-                </div>
+                <p className="mt-6 text-center text-xs text-slate-500">
+                    Staff accounts are created by an authorized administrator.
+                </p>
             </motion.div>
         </div>
     );

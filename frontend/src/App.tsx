@@ -27,6 +27,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
+function GuestRoute({ children }: { children: React.ReactNode }) {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>;
+}
+
 /**
  * Navbar Layout Component.
  */
@@ -148,7 +153,14 @@ function NavigationLayout() {
                         }
                     />
                     <Route path="/timetable" element={<Timetable />} />
-                    <Route path="/login" element={<Login />} />
+                    <Route
+                        path="/login"
+                        element={
+                            <GuestRoute>
+                                <Login />
+                            </GuestRoute>
+                        }
+                    />
                     <Route 
                         path="/enroll" 
                         element={
