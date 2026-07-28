@@ -49,18 +49,12 @@ function NavigationLayout() {
             <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
                 <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     {/* Branding Logo */}
-                    <Link to="/timetable" className="flex items-center gap-3 transition-opacity hover:opacity-95">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-viva-blue text-white shadow-md shadow-viva-blue/20 font-bold text-xl">
-                            V
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-display text-lg font-extrabold tracking-tight text-ink leading-tight">
-                                VIVA <span className="text-viva-green">DIGITAL</span>
-                            </span>
-                            <span className="font-mono text-[9px] tracking-widest text-slate-400 uppercase font-bold">
-                                Center
-                            </span>
-                        </div>
+                    <Link to="/timetable" className="shrink-0 transition-opacity hover:opacity-90" aria-label="Viva Digital Center">
+                        <img
+                            src="/viva_logo.jpeg"
+                            alt="Viva Digital Center"
+                            className="h-14 w-auto object-contain"
+                        />
                     </Link>
 
                     {/* Navigation Items */}

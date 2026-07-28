@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { loginSchema } from '../utils/validation';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -78,9 +78,11 @@ export default function Login() {
             >
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-viva-blue/10 text-viva-blue">
-                        <LogIn className="h-6 w-6" />
-                    </div>
+                    <img
+                        src="/viva_logo.jpeg"
+                        alt="Viva Digital Center"
+                        className="mx-auto mb-5 h-36 w-auto object-contain"
+                    />
                     <h2 className="font-display text-2xl font-extrabold text-ink">Welcome Back</h2>
                     <p className="text-sm text-slate-400 mt-1">Sign in to manage your training enrollments.</p>
                 </div>
