@@ -13,7 +13,8 @@ import Trainees from './pages/Trainees';
 import Learning from './pages/Learning';
 import Finance from './pages/Finance';
 import Resources from './pages/Resources';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen } from 'lucide-react';
+import Dashboard from './pages/Dashboard';
+import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,10 @@ function NavigationLayout() {
 
                         {isAuthenticated ? (
                             <>
+                                <Link to="/dashboard" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    <span>Dashboard</span>
+                                </Link>
                                 <Link to="/enroll" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
                                     <BookOpen className="h-4 w-4" />
                                     <span>Enroll Student</span>
@@ -135,6 +140,14 @@ function NavigationLayout() {
             <main className="mx-auto w-full max-w-6xl px-6 py-10 flex-grow">
                 <Routes>
                     <Route path="/" element={<Navigate to="/timetable" replace />} />
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route path="/timetable" element={<Timetable />} />
                     <Route path="/login" element={<Login />} />
                     <Route 

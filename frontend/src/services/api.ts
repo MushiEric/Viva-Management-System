@@ -465,6 +465,26 @@ export const api = {
         return downloadAuthenticated(`/learning-materials/${materialId}/download`, title);
     },
 
+    async getDashboard(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/dashboard`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async getReport(period: string, from?: string, to?: string): Promise<ApiResponse> {
+        const params = new URLSearchParams({ period });
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
+        const response = await fetch(`${BASE_URL}/reports?${params}`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async getAuditLogs(search = ''): Promise<ApiResponse> {
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        const response = await fetch(`${BASE_URL}/audit-logs?${params}`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
     /**
      * Get authenticated user profile.
      */

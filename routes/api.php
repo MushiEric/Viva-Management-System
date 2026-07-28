@@ -13,6 +13,8 @@ use App\Modules\Learning\Http\Controllers\LearningController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
 use App\Modules\Certification\Http\Controllers\CertificateController;
 use App\Modules\Training\Http\Controllers\LearningMaterialController;
+use App\Modules\Reporting\Http\Controllers\ReportingController;
+use App\Modules\Audit\Http\Controllers\AuditLogController;
 
 Route::prefix('v1')->group(function () {
     // Authentication token endpoint
@@ -112,5 +114,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/learning-materials/{material}', [LearningMaterialController::class, 'update']);
             Route::delete('/learning-materials/{material}', [LearningMaterialController::class, 'destroy']);
         });
+
+        Route::get('/dashboard', [ReportingController::class, 'dashboard']);
+        Route::middleware('permission:reports.view')->get('/reports', [ReportingController::class, 'report']);
+        Route::middleware('permission:audit.view')->get('/audit-logs', [AuditLogController::class, 'index']);
     });
 });

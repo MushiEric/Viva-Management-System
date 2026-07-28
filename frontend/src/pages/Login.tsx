@@ -26,7 +26,7 @@ export default function Login() {
             if (data.success && data.user && data.token) {
                 setAuth(data.user, data.token);
                 toast.success(`Welcome back, ${data.user.name}!`);
-                navigate('/timetable');
+                navigate('/dashboard');
             } else {
                 toast.error(data.message || 'Login failed');
             }
