@@ -26,4 +26,7 @@ enum Permission: string
     case IssueCertificates = 'certificates.issue';
     case ViewReports = 'reports.view';
     case ViewAudit = 'audit.view';
+    case ViewEnquiries = 'enquiries.view';
+    case ManageEnquiries = 'enquiries.manage';
+    case ManageSettings = 'settings.manage';
 }

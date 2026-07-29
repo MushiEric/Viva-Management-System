@@ -1,0 +1,1514 @@
+openapi: 3.1.0
+info:
+  title: VIVA Management Portal API
+  version: 1.0.0
+  description: |
+    REST API for the VIVA Digital Center management portal.
+
+    Authenticate with `POST /token`, then send the returned token as
+    `Authorization: Bearer <token>`. Access to protected operations also depends
+    on the staff member's role and permission overrides.
+  contact:
+    name: VIVA Digital Center
+    email: vivadigitalcenter@gmail.com
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local backend
+  - url: http://{host}:8000/api/v1
+    description: Local network backend
+    variables:
+      host:
+        default: localhost
+        description: Hostname or LAN IP address running Laravel
+tags:
+  - name: Authentication
+  - name: Public
+  - name: Trainees
+  - name: Enrollments
+  - name: Staff
+  - name: Programs
+  - name: Cohorts
+  - name: Learning
+  - name: Finance
+  - name: Certificates
+  - name: Communications
+  - name: Reporting
+  - name: Audit
+  - name: Settings
+security:
+  - bearerAuth: []
+paths:
+  /token:
+    post:
+      tags: [Authentication]
+      summary: Log in and issue a Sanctum access token
+      operationId: issueToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@example.com
+              password: StrongPass123!
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke the current access token
+      operationId: logout
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /user:
+    get:
+      tags: [Authentication]
+      summary: Get the authenticated staff profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /profile/password:
+    put:
+      tags: [Authentication]
+      summary: Change the authenticated staff password
+      description: New passwords require at least 8 characters, mixed case, a number, and a symbol.
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /timetable:
+    get:
+      tags: [Public]
+      summary: List public upcoming cohort availability
+      operationId: getTimetable
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /contact-inquiries:
+    get:
+      tags: [Communications]
+      summary: List website contact inquiries
+      operationId: listContactInquiries
+      x-permission: enquiries.view
+      parameters:
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Public, Communications]
+      summary: Submit a website contact inquiry
+      operationId: createContactInquiry
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInquiryRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /contact-inquiries/{inquiry}:
+    patch:
+      tags: [Communications]
+      summary: Update inquiry status or staff notes
+      operationId: updateContactInquiry
+      x-permission: enquiries.manage
+      parameters:
+        - $ref: '#/components/parameters/InquiryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [new, pending, contacted, closed]
+                internal_notes:
+                  type: [string, 'null']
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /trainees:
+    get:
+      tags: [Trainees]
+      summary: Search and paginate trainees
+      operationId: listTrainees
+      x-permission: trainees.view
+      parameters:
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Trainees]
+      summary: Register a trainee
+      operationId: createTrainee
+      x-permission: trainees.manage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TraineeForm'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /trainees/{trainee}:
+    get:
+      tags: [Trainees]
+      summary: Get a trainee with enrollment and finance history
+      operationId: getTrainee
+      x-permission: trainees.view
+      parameters:
+        - $ref: '#/components/parameters/TraineeId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Trainees]
+      summary: Update a trainee
+      operationId: updateTrainee
+      x-permission: trainees.manage
+      parameters:
+        - $ref: '#/components/parameters/TraineeId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TraineeForm'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Trainees]
+      summary: Deactivate a trainee
+      operationId: deactivateTrainee
+      x-permission: trainees.manage
+      parameters:
+        - $ref: '#/components/parameters/TraineeId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /trainees/{trainee}/registration-form:
+    get:
+      tags: [Trainees]
+      summary: Download the trainee registration PDF
+      operationId: downloadTraineeRegistrationForm
+      x-permission: trainees.view
+      parameters:
+        - $ref: '#/components/parameters/TraineeId'
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /staff/enrollments:
+    post:
+      tags: [Enrollments]
+      summary: Enroll an existing trainee into a cohort
+      operationId: enrollTrainee
+      x-permission: enrollments.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /staff/enrollments/{enrollment}/transfer:
+    post:
+      tags: [Enrollments]
+      summary: Transfer an enrollment to another cohort
+      operationId: transferEnrollment
+      x-permission: enrollments.transfer
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cohort_id, reason]
+              properties:
+                cohort_id:
+                  type: integer
+                reason:
+                  type: string
+                  maxLength: 2000
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /staff:
+    get:
+      tags: [Staff]
+      summary: List staff accounts
+      operationId: listStaff
+      x-permission: staff.manage
+      parameters:
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedResponse'
+    post:
+      tags: [Staff]
+      summary: Create a pending staff account
+      operationId: createStaff
+      x-permission: staff.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /staff/{staff}:
+    put:
+      tags: [Staff]
+      summary: Update a staff account
+      operationId: updateStaff
+      x-permission: staff.manage
+      parameters:
+        - $ref: '#/components/parameters/StaffId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Staff]
+      summary: Deactivate a staff account
+      operationId: deactivateStaff
+      x-permission: staff.manage
+      parameters:
+        - $ref: '#/components/parameters/StaffId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /staff/{staff}/approve:
+    post:
+      tags: [Staff]
+      summary: Approve a pending staff account
+      operationId: approveStaff
+      x-permission: staff.approve
+      parameters:
+        - $ref: '#/components/parameters/StaffId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /staff-permissions:
+    get:
+      tags: [Staff]
+      summary: List permission names and role defaults
+      operationId: listStaffPermissions
+      x-permission: permissions.manage
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /staff/{staff}/permissions:
+    put:
+      tags: [Staff]
+      summary: Replace staff permission overrides
+      operationId: updateStaffPermissions
+      x-permission: permissions.manage
+      parameters:
+        - $ref: '#/components/parameters/StaffId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [overrides]
+              properties:
+                overrides:
+                  type: object
+                  additionalProperties:
+                    type: boolean
+                  example:
+                    finance.view: true
+                    payments.cancel: false
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /programs:
+    get:
+      tags: [Programs]
+      summary: List programs and levels
+      operationId: listPrograms
+      x-permission: programs.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    post:
+      tags: [Programs]
+      summary: Create a draft program
+      operationId: createProgram
+      x-permission: programs.draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /programs/{program}:
+    put:
+      tags: [Programs]
+      summary: Update a draft program
+      operationId: updateProgram
+      x-permission: programs.draft
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    delete:
+      tags: [Programs]
+      summary: Deactivate a program
+      operationId: deactivateProgram
+      x-permission: programs.draft
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+  /programs/{program}/levels:
+    post:
+      tags: [Programs]
+      summary: Add a level to a program
+      operationId: addProgramLevel
+      x-permission: programs.draft
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramLevelRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /program-levels/{level}:
+    put:
+      tags: [Programs]
+      summary: Update a program level
+      operationId: updateProgramLevel
+      x-permission: programs.draft
+      parameters:
+        - $ref: '#/components/parameters/LevelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramLevelRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /programs/{program}/submit:
+    post:
+      tags: [Programs]
+      summary: Submit a draft program for approval
+      operationId: submitProgram
+      x-permission: programs.draft
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /programs/{program}/approve:
+    post:
+      tags: [Programs]
+      summary: Approve a submitted program
+      operationId: approveProgram
+      x-permission: programs.approve
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /programs/{program}/request-changes:
+    post:
+      tags: [Programs]
+      summary: Return a submitted program for changes
+      operationId: requestProgramChanges
+      x-permission: programs.approve
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /program-levels/{level}/approve-fee:
+    post:
+      tags: [Programs]
+      summary: Approve a program-level fee
+      operationId: approveProgramFee
+      x-permission: fees.approve
+      parameters:
+        - $ref: '#/components/parameters/LevelId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /program-facilitators:
+    get:
+      tags: [Programs]
+      summary: List facilitators available for program assignment
+      operationId: listProgramFacilitators
+      x-permission: programs.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /cohorts:
+    get:
+      tags: [Cohorts]
+      summary: List cohorts
+      operationId: listCohorts
+      x-permission: cohorts.manage
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    post:
+      tags: [Cohorts]
+      summary: Create a cohort from an approved program level
+      operationId: createCohort
+      x-permission: cohorts.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CohortRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /cohort-options:
+    get:
+      tags: [Cohorts]
+      summary: List approved program levels and cohort form options
+      operationId: getCohortOptions
+      x-permission: cohorts.manage
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /cohorts/{cohort}:
+    put:
+      tags: [Cohorts]
+      summary: Update a cohort
+      operationId: updateCohort
+      x-permission: cohorts.manage
+      parameters:
+        - $ref: '#/components/parameters/CohortId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CohortRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    delete:
+      tags: [Cohorts]
+      summary: Deactivate a cohort
+      operationId: deactivateCohort
+      x-permission: cohorts.manage
+      parameters:
+        - $ref: '#/components/parameters/CohortId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+  /learning/enrollments:
+    get:
+      tags: [Learning]
+      summary: List learning enrollment records
+      operationId: listLearningEnrollments
+      x-permission: trainees.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}:
+    get:
+      tags: [Learning]
+      summary: Get a complete learning record
+      operationId: getLearningEnrollment
+      x-permission: trainees.view
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/assessments:
+    post:
+      tags: [Learning]
+      summary: Record an assessment
+      operationId: recordAssessment
+      x-permission: learning.record
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        $ref: '#/components/requestBodies/GenericJson'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/practical-work:
+    post:
+      tags: [Learning]
+      summary: Record practical work
+      operationId: recordPracticalWork
+      x-permission: learning.record
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        $ref: '#/components/requestBodies/GenericJson'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/notes:
+    post:
+      tags: [Learning]
+      summary: Add an enrollment note
+      operationId: addEnrollmentNote
+      x-permission: learning.record
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note:
+                  type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/attendance:
+    post:
+      tags: [Learning]
+      summary: Record attendance
+      operationId: recordAttendance
+      x-permission: learning.record
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        $ref: '#/components/requestBodies/GenericJson'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/progress:
+    patch:
+      tags: [Learning]
+      summary: Update enrollment progress
+      operationId: updateLearningProgress
+      x-permission: learning.record
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [percentage, status]
+              properties:
+                percentage:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                status:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /learning/enrollments/{enrollment}/complete:
+    post:
+      tags: [Learning]
+      summary: Complete an enrollment
+      operationId: completeEnrollment
+      x-permission: enrollments.complete
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /learning-materials:
+    get:
+      tags: [Learning]
+      summary: List active learning materials
+      operationId: listLearningMaterials
+      x-permission: programs.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /programs/{program}/learning-materials:
+    post:
+      tags: [Learning]
+      summary: Upload a learning material
+      operationId: uploadLearningMaterial
+      x-permission: materials.manage
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, file]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /learning-materials/{material}:
+    post:
+      tags: [Learning]
+      summary: Replace learning material metadata or file
+      description: Uses POST to support multipart form uploads.
+      operationId: updateLearningMaterial
+      x-permission: materials.manage
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      requestBody:
+        $ref: '#/components/requestBodies/GenericMultipart'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    delete:
+      tags: [Learning]
+      summary: Deactivate a learning material
+      operationId: deactivateLearningMaterial
+      x-permission: materials.manage
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+  /learning-materials/{material}/download:
+    get:
+      tags: [Learning]
+      summary: Download a learning material
+      operationId: downloadLearningMaterial
+      x-permission: programs.view
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      responses:
+        '200':
+          $ref: '#/components/responses/BinaryResponse'
+  /finance:
+    get:
+      tags: [Finance]
+      summary: List invoices, payments, and finance totals
+      operationId: getFinance
+      x-permission: finance.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /finance/invoices:
+    post:
+      tags: [Finance]
+      summary: Create a multi-enrollment draft invoice
+      operationId: createInvoice
+      x-permission: finance.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /finance/invoices/{invoice}:
+    get:
+      tags: [Finance]
+      summary: Preview an invoice with company settings and balance
+      operationId: previewInvoice
+      x-permission: finance.view
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /finance/invoices/{invoice}/issue:
+    post:
+      tags: [Finance]
+      summary: Issue a draft invoice
+      operationId: issueInvoice
+      x-permission: finance.manage
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /finance/invoices/{invoice}/pdf:
+    get:
+      tags: [Finance]
+      summary: Download an issued tax invoice PDF
+      operationId: downloadInvoicePdf
+      x-permission: finance.view
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfResponse'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /finance/invoices/{invoice}/discounts:
+    post:
+      tags: [Finance]
+      summary: Request an invoice discount
+      operationId: requestInvoiceDiscount
+      x-permission: finance.manage
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, reason]
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+                reason:
+                  type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /finance/discounts/{discount}/approve:
+    post:
+      tags: [Finance]
+      summary: Approve a pending invoice discount
+      operationId: approveInvoiceDiscount
+      x-permission: discounts.approve
+      parameters:
+        - $ref: '#/components/parameters/DiscountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /finance/payments:
+    post:
+      tags: [Finance]
+      summary: Record and allocate a payment
+      operationId: recordPayment
+      x-permission: finance.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/DomainError'
+  /finance/payments/{payment}/pdf:
+    get:
+      tags: [Finance]
+      summary: Download a payment receipt PDF
+      operationId: downloadPaymentReceipt
+      x-permission: finance.view
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfResponse'
+  /finance/payments/{payment}/cancel:
+    post:
+      tags: [Finance]
+      summary: Cancel a payment and restore invoice balances
+      operationId: cancelPayment
+      x-permission: payments.cancel
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /finance/invoices/{invoice}/cancel:
+    post:
+      tags: [Finance]
+      summary: Cancel an invoice
+      operationId: cancelInvoice
+      x-permission: finance.manage
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /certificates:
+    get:
+      tags: [Certificates]
+      summary: List certificates
+      operationId: listCertificates
+      x-permission: certificates.issue
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /certificates/enrollments/{enrollment}:
+    post:
+      tags: [Certificates]
+      summary: Issue a certificate for a completed enrollment
+      operationId: issueCertificate
+      x-permission: certificates.issue
+      parameters:
+        - $ref: '#/components/parameters/EnrollmentId'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+  /certificates/{certificate}/download:
+    get:
+      tags: [Certificates]
+      summary: Download a certificate PDF
+      operationId: downloadCertificate
+      x-permission: certificates.issue
+      parameters:
+        - $ref: '#/components/parameters/CertificateId'
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfResponse'
+  /dashboard:
+    get:
+      tags: [Reporting]
+      summary: Get role-sensitive dashboard metrics
+      operationId: getDashboard
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /reports:
+    get:
+      tags: [Reporting]
+      summary: Get operational reports
+      operationId: getReports
+      x-permission: reports.view
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, custom]
+            default: monthly
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /audit-logs:
+    get:
+      tags: [Audit]
+      summary: Filter and paginate audit activity
+      operationId: listAuditLogs
+      x-permission: audit.view
+      parameters:
+        - $ref: '#/components/parameters/Search'
+        - name: actor_id
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: subject_type
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Page'
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            enum: [15, 30, 50, 100]
+            default: 30
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedResponse'
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get company and invoice settings
+      operationId: getSettings
+      x-permission: settings.manage
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    put:
+      tags: [Settings]
+      summary: Update company and invoice settings
+      operationId: updateSettings
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+  parameters:
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 255
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+    TraineeId:
+      name: trainee
+      in: path
+      required: true
+      schema: { type: integer }
+    InquiryId:
+      name: inquiry
+      in: path
+      required: true
+      schema: { type: integer }
+    EnrollmentId:
+      name: enrollment
+      in: path
+      required: true
+      schema: { type: integer }
+    StaffId:
+      name: staff
+      in: path
+      required: true
+      schema: { type: integer }
+    ProgramId:
+      name: program
+      in: path
+      required: true
+      schema: { type: integer }
+    LevelId:
+      name: level
+      in: path
+      required: true
+      schema: { type: integer }
+    CohortId:
+      name: cohort
+      in: path
+      required: true
+      schema: { type: integer }
+    MaterialId:
+      name: material
+      in: path
+      required: true
+      schema: { type: integer }
+    InvoiceId:
+      name: invoice
+      in: path
+      required: true
+      schema: { type: integer }
+    DiscountId:
+      name: discount
+      in: path
+      required: true
+      schema: { type: integer }
+    PaymentId:
+      name: payment
+      in: path
+      required: true
+      schema: { type: integer }
+    CertificateId:
+      name: certificate
+      in: path
+      required: true
+      schema: { type: integer }
+  requestBodies:
+    GenericJson:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    GenericMultipart:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            additionalProperties: true
+  responses:
+    Success:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SuccessResponse'
+    DataResponse:
+      description: Successful operation with response data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataResponse'
+    PaginatedResponse:
+      description: Paginated successful response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaginatedDataResponse'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    DomainError:
+      description: Business rule prevented the operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthenticated:
+      description: Missing or invalid access token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated staff member lacks the required permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PdfResponse:
+      description: PDF document
+      content:
+        application/pdf:
+          schema:
+            type: string
+            format: binary
+    BinaryResponse:
+      description: Downloadable file
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        device_name:
+          type: string
+          default: web
+    LoginResponse:
+      type: object
+      required: [success, token, user]
+      properties:
+        success:
+          type: boolean
+          example: true
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: [string, 'null'] }
+        role:
+          type: string
+          enum: [manager, admin, facilitator]
+        status:
+          type: string
+          enum: [pending, approved, inactive]
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, password, password_confirmation]
+      properties:
+        current_password:
+          type: string
+          format: password
+        password:
+          type: string
+          format: password
+          minLength: 8
+        password_confirmation:
+          type: string
+          format: password
+    ContactInquiryRequest:
+      type: object
+      required: [name, phone, email, program_of_interest]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 30
+        email:
+          type: string
+          format: email
+        program_of_interest:
+          type: string
+          maxLength: 255
+        message:
+          type: [string, 'null']
+          maxLength: 5000
+    TraineeForm:
+      type: object
+      required: [full_name, date_of_birth, gender, phone, address]
+      properties:
+        full_name:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        phone:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        tin:
+          type: [string, 'null']
+        address:
+          type: string
+        occupation:
+          type: [string, 'null']
+        registration_form:
+          type: string
+          format: binary
+          description: Optional PDF, maximum 5 MB
+        emergency_contact:
+          type: object
+          description: Required when the trainee is under 18.
+          properties:
+            full_name: { type: string }
+            relationship: { type: string }
+            phone: { type: string }
+    EnrollmentRequest:
+      type: object
+      required: [cohort_id, trainee_id]
+      properties:
+        cohort_id: { type: integer }
+        trainee_id: { type: integer }
+    StaffRequest:
+      type: object
+      required: [name, email, role]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: [string, 'null'] }
+        role:
+          type: string
+          enum: [manager, admin, facilitator]
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Required on create; mixed case, number, and symbol required.
+        password_confirmation:
+          type: string
+          format: password
+    ProgramRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: [string, 'null'] }
+    ProgramLevelRequest:
+      type: object
+      required: [name, fee_tzs]
+      properties:
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        duration_weeks: { type: [integer, 'null'] }
+        fee_tzs: { type: number, minimum: 0 }
+    CohortRequest:
+      type: object
+      required: [program_level_id, name, start_date, end_date, schedule_window]
+      properties:
+        program_level_id: { type: integer }
+        name: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        schedule_window: { type: string }
+        max_seats: { type: integer, minimum: 1, maximum: 7 }
+        facilitator_id: { type: [integer, 'null'] }
+    InvoiceRequest:
+      type: object
+      required: [trainee_id, items]
+      properties:
+        trainee_id: { type: integer }
+        due_date: { type: [string, 'null'], format: date }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [enrollment_id, description, amount]
+            properties:
+              enrollment_id: { type: integer }
+              description: { type: string }
+              amount: { type: number, minimum: 0.01 }
+    PaymentRequest:
+      type: object
+      required: [trainee_id, amount, method, allocations]
+      properties:
+        trainee_id: { type: integer }
+        amount: { type: number, minimum: 0.01 }
+        method:
+          type: string
+          enum: [cash, mobile_money]
+        provider:
+          type: [string, 'null']
+          description: Required for mobile money.
+        reference_number:
+          type: [string, 'null']
+          description: Required for mobile money.
+        allocations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [invoice_id, amount]
+            properties:
+              invoice_id: { type: integer }
+              amount: { type: number, minimum: 0.01 }
+    SettingsRequest:
+      type: object
+      required: [brand_name, phone, location, website, email, tin]
+      properties:
+        brand_name: { type: string }
+        phone: { type: string }
+        location: { type: string }
+        website: { type: string }
+        email: { type: string, format: email }
+        tin: { type: string }
+        bank_name: { type: [string, 'null'] }
+        account_name: { type: [string, 'null'] }
+        account_number: { type: [string, 'null'] }
+        mobile_money: { type: [string, 'null'] }
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+    DataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          description: Endpoint-specific response data.
+    PaginatedDataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            current_page: { type: integer }
+            data:
+              type: array
+              items: {}
+            last_page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string

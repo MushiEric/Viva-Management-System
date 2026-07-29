@@ -1,3 +1,4 @@
+
 const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export interface ApiResponse<T = any> {
@@ -6,6 +7,7 @@ export interface ApiResponse<T = any> {
     token?: string;
     user?: any;
     data?: T;
+    filters?: any;
 }
 
 /**
@@ -67,6 +69,30 @@ async function downloadAuthenticated(path: string, filename: string): Promise<vo
     URL.revokeObjectURL(url);
 }
 
+async function openAuthenticatedPdf(path: string): Promise<void> {
+    const previewWindow = window.open('', '_blank');
+    if (!previewWindow) {
+        throw new Error('Allow pop-ups to open the printable document.');
+    }
+    previewWindow.opener = null;
+    previewWindow.document.write('<p style="font-family:sans-serif;padding:24px">Preparing document...</p>');
+
+    const response = await fetch(`${BASE_URL}${path}`, {
+        headers: {
+            'Accept': 'application/pdf',
+            ...(localStorage.getItem('viva_auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('viva_auth_token')}` } : {}),
+        },
+    });
+    if (!response.ok) {
+        previewWindow.close();
+        throw new Error('Unable to open the printable document.');
+    }
+
+    const url = URL.createObjectURL(await response.blob());
+    previewWindow.location.href = url;
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 export const api = {
     /**
      * Issue authentication token (login).
@@ -111,11 +137,15 @@ export const api = {
         return handleResponse(response);
     },
 
-    async createTrainee(payload: any): Promise<ApiResponse> {
+    async createTrainee(payload: FormData): Promise<ApiResponse> {
+        const token = localStorage.getItem('viva_auth_token');
         const response = await fetch(`${BASE_URL}/trainees`, {
             method: 'POST',
-            headers: getHeaders(true),
-            body: JSON.stringify(payload),
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: payload,
         });
         return handleResponse(response);
     },
@@ -127,13 +157,22 @@ export const api = {
         return handleResponse(response);
     },
 
-    async updateTrainee(traineeId: number, payload: any): Promise<ApiResponse> {
+    async updateTrainee(traineeId: number, payload: FormData): Promise<ApiResponse> {
+        const token = localStorage.getItem('viva_auth_token');
+        payload.set('_method', 'PUT');
         const response = await fetch(`${BASE_URL}/trainees/${traineeId}`, {
-            method: 'PUT',
-            headers: getHeaders(true),
-            body: JSON.stringify(payload),
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: payload,
         });
         return handleResponse(response);
+    },
+
+    downloadTraineeRegistrationForm(traineeId: number, number: string): Promise<void> {
+        return downloadAuthenticated(`/trainees/${traineeId}/registration-form`, `${number}-registration-form.pdf`);
     },
 
     async deactivateTrainee(traineeId: number): Promise<ApiResponse> {
@@ -383,6 +422,21 @@ export const api = {
         return handleResponse(response);
     },
 
+    async getInvoice(invoiceId: number): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/finance/invoices/${invoiceId}`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    downloadInvoice(invoiceId: number, invoiceNumber: string): Promise<void> {
+        return downloadAuthenticated(`/finance/invoices/${invoiceId}/pdf`, `${invoiceNumber}.pdf`);
+    },
+
+    openInvoice(invoiceId: number): Promise<void> {
+        return openAuthenticatedPdf(`/finance/invoices/${invoiceId}/pdf`);
+    },
+
     async requestDiscount(invoiceId: number, amount: number, reason: string): Promise<ApiResponse> {
         const response = await fetch(`${BASE_URL}/finance/invoices/${invoiceId}/discounts`, {
             method: 'POST',
@@ -416,6 +470,14 @@ export const api = {
             body: JSON.stringify({ reason }),
         });
         return handleResponse(response);
+    },
+
+    downloadReceipt(paymentId: number, receiptNumber: string): Promise<void> {
+        return downloadAuthenticated(`/finance/payments/${paymentId}/pdf`, `${receiptNumber}.pdf`);
+    },
+
+    openReceipt(paymentId: number): Promise<void> {
+        return openAuthenticatedPdf(`/finance/payments/${paymentId}/pdf`);
     },
 
     async getCertificates(): Promise<ApiResponse> {
@@ -478,10 +540,84 @@ export const api = {
         return handleResponse(response);
     },
 
-    async getAuditLogs(search = ''): Promise<ApiResponse> {
+    async getAuditLogs(filters: string | {
+        search?: string;
+        actor_id?: string;
+        action?: string;
+        subject_type?: string;
+        from?: string;
+        to?: string;
+        page?: number;
+        per_page?: number;
+    } = ''): Promise<ApiResponse> {
         const params = new URLSearchParams();
-        if (search) params.set('search', search);
+        if (typeof filters === 'string') {
+            if (filters) params.set('search', filters);
+        } else {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined && value !== '') params.set(key, String(value));
+            });
+        }
         const response = await fetch(`${BASE_URL}/audit-logs?${params}`, { headers: getHeaders(true) });
+        return handleResponse(response);
+    },
+
+    async getContactInquiries(search = '', status = '', page = 1): Promise<ApiResponse> {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        const response = await fetch(`${BASE_URL}/contact-inquiries?${params}`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async updateContactInquiryStatus(inquiryId: number, status: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/contact-inquiries/${inquiryId}`, {
+            method: 'PATCH',
+            headers: getHeaders(true),
+            body: JSON.stringify({ status }),
+        });
+        return handleResponse(response);
+    },
+
+    async getSystemSettings(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/settings`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async updateSystemSettings(payload: {
+        brand_name: string;
+        phone: string;
+        location: string;
+        website: string;
+        email: string;
+        tin: string;
+        bank_name: string;
+        account_name: string;
+        account_number: string;
+        mobile_money: string;
+    }): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/settings`, {
+            method: 'PUT',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async changePassword(payload: {
+        current_password: string;
+        password: string;
+        password_confirmation: string;
+    }): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/profile/password`, {
+            method: 'PUT',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
         return handleResponse(response);
     },
 

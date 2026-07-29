@@ -20,10 +20,15 @@ class FinanceManagementTest extends TestCase
     use RefreshDatabase;
 
     private User $manager;
+
     private User $admin;
+
     private User $facilitator;
+
     private Trainee $trainee;
+
     private Enrollment $firstEnrollment;
+
     private Enrollment $secondEnrollment;
 
     protected function setUp(): void
@@ -61,6 +66,41 @@ class FinanceManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'issued');
         Event::assertDispatched(InvoiceIssued::class);
+    }
+
+    public function test_admin_can_download_an_issued_invoice_pdf(): void
+    {
+        Sanctum::actingAs($this->admin);
+        $invoiceId = $this->createAndIssueInvoice($this->firstEnrollment, 250000);
+
+        $this->get("/api/v1/finance/invoices/{$invoiceId}/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'attachment; filename="INV-2026-000001.pdf"');
+    }
+
+    public function test_admin_can_preview_invoice_details_and_download_payment_receipt(): void
+    {
+        Sanctum::actingAs($this->admin);
+        $invoiceId = $this->createAndIssueInvoice($this->firstEnrollment, 250000);
+
+        $this->getJson("/api/v1/finance/invoices/{$invoiceId}")
+            ->assertOk()
+            ->assertJsonPath('data.invoice.invoice_number', 'INV-2026-000001')
+            ->assertJsonPath('data.balance_due', 250000)
+            ->assertJsonPath('data.settings.tin', '154-227-148');
+
+        $paymentId = $this->postJson('/api/v1/finance/payments', [
+            'trainee_id' => $this->trainee->id,
+            'amount' => 100000,
+            'method' => 'cash',
+            'allocations' => [['invoice_id' => $invoiceId, 'amount' => 100000]],
+        ])->assertCreated()->json('data.id');
+
+        $this->get("/api/v1/finance/payments/{$paymentId}/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'attachment; filename="RCT-2026-000001.pdf"');
     }
 
     public function test_manager_approves_fixed_discount(): void

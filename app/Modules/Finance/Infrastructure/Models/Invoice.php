@@ -2,6 +2,7 @@
 
 namespace App\Modules\Finance\Infrastructure\Models;
 
+use App\Models\User;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,11 @@ class Invoice extends Model
     public function trainee(): BelongsTo
     {
         return $this->belongsTo(Trainee::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function items(): HasMany

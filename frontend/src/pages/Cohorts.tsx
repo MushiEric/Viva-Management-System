@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { CalendarClock, Pencil, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, CalendarClock, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 
 interface LevelOption {
@@ -144,6 +145,22 @@ export default function Cohorts() {
                         <input type="time" required={form.schedule_window === 'custom'} className="rounded-xl border p-3" value={form.default_end_time} onChange={(event) => setForm({ ...form, default_end_time: event.target.value })} />
                     </div>
                 </div>
+                {!optionsQuery.isLoading && levels.length === 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                        <div className="flex gap-3">
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="font-bold">No approved program level is available.</p>
+                                <p className="mt-1">
+                                    A manager must approve both the program and its level fee before an admin can create a cohort.
+                                </p>
+                                <Link to="/programs" className="mt-2 inline-block font-bold text-viva-blue hover:underline">
+                                    Review program status
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div>
                     <p className="mb-2 text-xs font-bold uppercase text-slate-500">Training days</p>
                     <div className="flex flex-wrap gap-2">{dayNames.map((name, index) => <button type="button" key={name} onClick={() => setForm({ ...form, schedule_days: toggle(form.schedule_days, index + 1) })} className={`rounded-full border px-4 py-2 text-xs font-bold ${form.schedule_days.includes(index + 1) ? 'bg-viva-blue text-white' : ''}`}>{name}</button>)}</div>

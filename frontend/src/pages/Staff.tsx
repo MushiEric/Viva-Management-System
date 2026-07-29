@@ -117,8 +117,9 @@ export default function Staff() {
                         <option value="admin">Admin</option>
                         <option value="manager">Manager</option>
                     </select>
-                    <input required minLength={6} type="password" className="w-full rounded-xl border p-3" placeholder="Temporary password (minimum 6 characters)" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-                    <input required minLength={6} type="password" className="w-full rounded-xl border p-3" placeholder="Confirm password" value={form.password_confirmation} onChange={(event) => setForm({ ...form, password_confirmation: event.target.value })} />
+                    <input required minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" type="password" className="w-full rounded-xl border p-3" placeholder="Temporary password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+                    <input required minLength={8} type="password" className="w-full rounded-xl border p-3" placeholder="Confirm password" value={form.password_confirmation} onChange={(event) => setForm({ ...form, password_confirmation: event.target.value })} />
+                    <p className="text-xs text-slate-500">Use 8+ characters with uppercase, lowercase, number, and symbol.</p>
                     <button disabled={createStaff.isPending} className="w-full rounded-xl bg-viva-blue p-3 font-bold text-white disabled:opacity-50">
                         {createStaff.isPending ? 'Creating...' : 'Create Pending Account'}
                     </button>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowRightLeft, Pencil, Search, Trash2, UserRound } from 'lucide-react';
+import { ArrowRightLeft, Download, Pencil, Search, Trash2, UserRound } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,8 +14,10 @@ interface TraineeSummary {
     gender: string;
     phone: string | null;
     email: string | null;
+    tin: string | null;
     address: string | null;
     occupation: string | null;
+    registration_form_path: string | null;
     enrollments_count: number;
     emergency_contact: EmergencyContact | null;
 }
@@ -52,6 +54,7 @@ const blankForm = {
     gender: 'male',
     phone: '',
     email: '',
+    tin: '',
     address: '',
     occupation: '',
     emergency_name: '',
@@ -68,6 +71,7 @@ export default function Trainees() {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState(blankForm);
+    const [registrationForm, setRegistrationForm] = useState<File | null>(null);
     const [transfer, setTransfer] = useState({ enrollment_id: 0, cohort_id: 0, reason: '' });
 
     const traineesQuery = useQuery({ queryKey: ['trainees', search], queryFn: () => api.getTrainees(search) });
@@ -80,21 +84,26 @@ export default function Trainees() {
     };
 
     const update = useMutation({
-        mutationFn: () => api.updateTrainee(selectedId!, {
-            full_name: form.full_name,
-            date_of_birth: form.date_of_birth,
-            gender: form.gender,
-            phone: form.phone || null,
-            email: form.email || null,
-            address: form.address || null,
-            occupation: form.occupation || null,
-            emergency_contact: form.emergency_name ? {
-                full_name: form.emergency_name,
-                relationship: form.emergency_relationship,
-                phone: form.emergency_phone,
-                alternate_phone: form.emergency_alternate_phone || null,
-            } : null,
-        }),
+        mutationFn: () => {
+            const payload = new FormData();
+            payload.set('full_name', form.full_name);
+            payload.set('date_of_birth', form.date_of_birth);
+            payload.set('gender', form.gender);
+            payload.set('phone', form.phone);
+            payload.set('email', form.email);
+            payload.set('tin', form.tin);
+            payload.set('address', form.address);
+            payload.set('occupation', form.occupation);
+            if (registrationForm) payload.set('registration_form', registrationForm);
+            if (form.emergency_name) {
+                payload.set('emergency_contact[full_name]', form.emergency_name);
+                payload.set('emergency_contact[relationship]', form.emergency_relationship);
+                payload.set('emergency_contact[phone]', form.emergency_phone);
+                payload.set('emergency_contact[alternate_phone]', form.emergency_alternate_phone);
+            }
+
+            return api.updateTrainee(selectedId!, payload);
+        },
         onSuccess: () => {
             setEditing(false);
             refresh();
@@ -135,6 +144,7 @@ export default function Trainees() {
             gender: selected.gender,
             phone: selected.phone || '',
             email: selected.email || '',
+            tin: selected.tin || '',
             address: selected.address || '',
             occupation: selected.occupation || '',
             emergency_name: emergency?.full_name || '',
@@ -179,14 +189,16 @@ export default function Trainees() {
                         <form onSubmit={submitUpdate} className="space-y-4">
                             <h2 className="font-display text-xl font-bold">Edit {selected.full_name}</h2>
                             <div className="grid gap-3 md:grid-cols-2">
-                                <input required className="rounded-xl border p-3" placeholder="Full name" value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} />
-                                <input required type="date" className="rounded-xl border p-3" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} />
-                                <select className="rounded-xl border p-3" value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })}><option value="male">Male</option><option value="female">Female</option></select>
-                                <input className="rounded-xl border p-3" placeholder="Phone" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-                                <input type="email" className="rounded-xl border p-3" placeholder="Email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-                                <input className="rounded-xl border p-3" placeholder="Occupation" value={form.occupation} onChange={(event) => setForm({ ...form, occupation: event.target.value })} />
+                                <label className="text-sm font-semibold">Full Name<input required className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Date of Birth<input required type="date" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Gender<select className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })}><option value="male">Male</option><option value="female">Female</option></select></label>
+                                <label className="text-sm font-semibold">Phone Number<input required className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Email <span className="font-normal text-slate-400">(optional)</span><input type="email" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Customer TIN <span className="font-normal text-slate-400">(optional)</span><input className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.tin} onChange={(event) => setForm({ ...form, tin: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Occupation<input className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.occupation} onChange={(event) => setForm({ ...form, occupation: event.target.value })} /></label>
+                                <label className="text-sm font-semibold">Replace Registration Form <span className="font-normal text-slate-400">(PDF, max 5 MB)</span><input type="file" accept="application/pdf" className="mt-1 w-full rounded-xl border p-3 font-normal" onChange={(event) => setRegistrationForm(event.target.files?.[0] || null)} /></label>
                             </div>
-                            <textarea className="w-full rounded-xl border p-3" placeholder="Address" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+                            <label className="block text-sm font-semibold">Address<textarea required className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
                             <div className="grid gap-3 rounded-xl bg-slate-50 p-4 md:grid-cols-2">
                                 <input className="rounded-xl border p-3" placeholder="Emergency contact name" value={form.emergency_name} onChange={(event) => setForm({ ...form, emergency_name: event.target.value })} />
                                 <input className="rounded-xl border p-3" placeholder="Relationship" value={form.emergency_relationship} onChange={(event) => setForm({ ...form, emergency_relationship: event.target.value })} />
@@ -204,8 +216,14 @@ export default function Trainees() {
                             <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-2">
                                 <p><strong>Date of birth:</strong> {selected.date_of_birth}</p><p><strong>Gender:</strong> {selected.gender}</p>
                                 <p><strong>Phone:</strong> {selected.phone || 'Not provided'}</p><p><strong>Email:</strong> {selected.email || 'Not provided'}</p>
+                                <p><strong>Customer TIN:</strong> {selected.tin || 'Not provided'}</p>
                                 <p><strong>Occupation:</strong> {selected.occupation || 'Not provided'}</p><p><strong>Address:</strong> {selected.address || 'Not provided'}</p>
                             </div>
+                            {selected.registration_form_path && (
+                                <button onClick={() => api.downloadTraineeRegistrationForm(selected.id, selected.trainee_number)} className="flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold text-viva-blue">
+                                    <Download className="h-4 w-4" /> Download Scanned Registration Form
+                                </button>
+                            )}
                             {selected.emergency_contact && <div className="rounded-xl border p-4 text-sm"><h3 className="mb-2 font-bold">Emergency Contact</h3><p>{selected.emergency_contact.full_name} · {selected.emergency_contact.relationship}</p><p>{selected.emergency_contact.phone}</p></div>}
                             <div>
                                 <h3 className="mb-3 font-display text-lg font-bold">Enrollment History</h3>

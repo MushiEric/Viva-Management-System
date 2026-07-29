@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Events\StudentRegistered;
 use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
+use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -18,6 +18,7 @@ class EnrollmentTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected Cohort $cohort;
 
     protected function setUp(): void
@@ -78,9 +79,9 @@ class EnrollmentTest extends TestCase
                     'cohort_name',
                     'schedule_window',
                     'course' => ['id', 'name', 'is_module', 'parent_course'],
-                    'capacity' => ['max_seats', 'occupied_seats', 'available_seats', 'status']
-                ]
-            ]
+                    'capacity' => ['max_seats', 'occupied_seats', 'available_seats', 'status'],
+                ],
+            ],
         ]);
     }
 
@@ -128,11 +129,11 @@ class EnrollmentTest extends TestCase
             'trainee_id' => $trainee->id,
         ]);
 
-        Event::assertDispatched(\App\Modules\Enrollment\Domain\Events\TraineeEnrolled::class);
+        Event::assertDispatched(TraineeEnrolled::class);
     }
 
     /**
-     * Test minor registration tracks parent/admin and permits null email/phone.
+     * Test minor registration requires emergency contact.
      */
     public function test_minor_requires_emergency_contact()
     {
@@ -144,6 +145,8 @@ class EnrollmentTest extends TestCase
             'full_name' => 'Junior Kid',
             'date_of_birth' => now()->subYears(12)->toDateString(),
             'gender' => 'male',
+            'phone' => '0712345678',
+            'address' => 'Kigamboni, Dar es Salaam',
         ]);
 
         $response->assertStatus(422);
@@ -191,14 +194,14 @@ class EnrollmentTest extends TestCase
         $response->assertStatus(422);
         $response->assertJson([
             'success' => false,
-            'message' => 'Lab at maximum capacity (7/7 stations occupied) for this session.'
+            'message' => 'Lab at maximum capacity (7/7 stations occupied) for this session.',
         ]);
     }
 
     /**
      * Test register endpoint.
      */
-    public function test_admin_can_register_adult_trainee_without_contact_details()
+    public function test_admin_can_register_adult_trainee_without_email()
     {
         Sanctum::actingAs($this->admin);
 
@@ -206,14 +209,17 @@ class EnrollmentTest extends TestCase
             'full_name' => 'Bob Builder',
             'date_of_birth' => '1995-03-10',
             'gender' => 'male',
+            'phone' => '0712345678',
+            'address' => 'Kigamboni, Dar es Salaam',
         ]);
 
         $response->assertStatus(201);
         $response->assertJsonStructure(['success', 'data']);
         $this->assertDatabaseHas('trainees', [
             'full_name' => 'Bob Builder',
-            'phone' => null,
+            'phone' => '0712345678',
             'email' => null,
+            'address' => 'Kigamboni, Dar es Salaam',
         ]);
     }
 }

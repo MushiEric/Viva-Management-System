@@ -27,6 +27,27 @@ Set production values for:
 
 Initial staff passwords must be strong and changed after first deployment.
 
+## Email delivery
+
+Website enquiries queue two emails: one alert to all approved managers/admins and
+one confirmation to the visitor. Configure a real SMTP account:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=your-smtp-username
+MAIL_PASSWORD=your-smtp-password
+MAIL_FROM_ADDRESS=no-reply@vivadigitalcenter.com
+MAIL_FROM_NAME="VIVA DIGITAL CENTER"
+QUEUE_CONNECTION=database
+```
+
+The sender address must be accepted or verified by the SMTP provider. For Gmail,
+use `smtp.gmail.com`, the full Gmail address as the username, and a Google App
+Password rather than the normal account password.
+
 ## Release commands
 
 ```bash

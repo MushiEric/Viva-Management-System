@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Modules\Enrollment\Application\TraineeRegistrationService;
 use App\Modules\Enrollment\Http\Requests\StoreTraineeRequest;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Modules\Finance\Infrastructure\Models\Invoice;
+use App\Modules\Finance\Infrastructure\Models\Payment;
 use App\Modules\Identity\Application\AuthorizationService;
 use App\Modules\Identity\Domain\Permission;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TraineeController extends Controller
 {
@@ -37,8 +41,7 @@ final class TraineeController extends Controller
         Request $request,
         Trainee $trainee,
         AuthorizationService $authorization,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $trainee->load([
             'emergencyContact',
             'enrollments' => fn ($query) => $query->latest('enrolled_at'),
@@ -49,14 +52,14 @@ final class TraineeController extends Controller
 
         $canViewFinance = $authorization->allows($request->user(), Permission::ViewFinance);
         $invoices = $canViewFinance
-            ? \App\Modules\Finance\Infrastructure\Models\Invoice::query()
+            ? Invoice::query()
                 ->where('trainee_id', $trainee->id)
                 ->with('items')
                 ->latest()
                 ->get()
             : null;
         $payments = $canViewFinance
-            ? \App\Modules\Finance\Infrastructure\Models\Payment::query()
+            ? Payment::query()
                 ->where('trainee_id', $trainee->id)
                 ->with('allocations')
                 ->latest()
@@ -96,5 +99,20 @@ final class TraineeController extends Controller
         $service->deactivate($trainee, $request->user());
 
         return response()->json(['success' => true, 'message' => 'Trainee record deactivated.']);
+    }
+
+    public function downloadRegistrationForm(Trainee $trainee): StreamedResponse
+    {
+        abort_unless(
+            $trainee->registration_form_path
+            && Storage::disk('local')->exists($trainee->registration_form_path),
+            404,
+        );
+
+        return Storage::disk('local')->download(
+            $trainee->registration_form_path,
+            "{$trainee->trainee_number}-registration-form.pdf",
+            ['Content-Type' => 'application/pdf'],
+        );
     }
 }

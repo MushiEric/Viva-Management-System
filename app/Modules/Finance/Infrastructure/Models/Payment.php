@@ -2,6 +2,7 @@
 
 namespace App\Modules\Finance\Infrastructure\Models;
 
+use App\Models\User;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,5 +43,15 @@ class Payment extends Model
     public function allocations(): HasMany
     {
         return $this->hasMany(PaymentAllocation::class);
+    }
+
+    public function recorder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function canceller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 }

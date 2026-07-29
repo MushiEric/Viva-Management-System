@@ -27,27 +27,36 @@ export default function Enroll() {
         gender: 'male',
         phone: '',
         email: '',
+        tin: '',
+        address: '',
         emergency_name: '',
         emergency_relationship: '',
         emergency_phone: '',
     });
+    const [registrationForm, setRegistrationForm] = useState<File | null>(null);
 
     const timetable = useQuery({ queryKey: ['timetable'], queryFn: api.getTimetable });
     const trainees = useQuery({ queryKey: ['trainees'], queryFn: () => api.getTrainees() });
 
     const createTrainee = useMutation({
-        mutationFn: () => api.createTrainee({
-            full_name: form.full_name,
-            date_of_birth: form.date_of_birth,
-            gender: form.gender,
-            phone: form.phone || null,
-            email: form.email || null,
-            emergency_contact: form.emergency_name ? {
-                full_name: form.emergency_name,
-                relationship: form.emergency_relationship,
-                phone: form.emergency_phone,
-            } : null,
-        }),
+        mutationFn: () => {
+            const payload = new FormData();
+            payload.set('full_name', form.full_name);
+            payload.set('date_of_birth', form.date_of_birth);
+            payload.set('gender', form.gender);
+            payload.set('phone', form.phone);
+            payload.set('email', form.email);
+            payload.set('tin', form.tin);
+            payload.set('address', form.address);
+            if (registrationForm) payload.set('registration_form', registrationForm);
+            if (form.emergency_name) {
+                payload.set('emergency_contact[full_name]', form.emergency_name);
+                payload.set('emergency_contact[relationship]', form.emergency_relationship);
+                payload.set('emergency_contact[phone]', form.emergency_phone);
+            }
+
+            return api.createTrainee(payload);
+        },
         onSuccess: (response) => {
             setTraineeId(response.data.id);
             queryClient.invalidateQueries({ queryKey: ['trainees'] });
@@ -84,18 +93,37 @@ export default function Enroll() {
                 <h1 className="font-display text-2xl font-bold">Register Trainee</h1>
                 <p className="mt-1 text-sm text-slate-500">Trainees are records only and do not receive login accounts.</p>
                 <form className="mt-6 space-y-4" onSubmit={submitTrainee}>
-                    <input required placeholder="Full name" className="w-full rounded-xl border p-3" value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} />
+                    <label className="block text-sm font-semibold text-slate-700">Full Name
+                        <input required placeholder="Enter full name" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} />
+                    </label>
                     <div className="grid grid-cols-2 gap-3">
-                        <input required type="date" className="rounded-xl border p-3" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} />
-                        <select className="rounded-xl border p-3" value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })}>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
+                        <label className="text-sm font-semibold text-slate-700">Date of Birth
+                            <input required type="date" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.date_of_birth} onChange={(event) => setForm({ ...form, date_of_birth: event.target.value })} />
+                        </label>
+                        <label className="text-sm font-semibold text-slate-700">Gender
+                            <select className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })}>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </label>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <input placeholder="Phone (optional)" className="rounded-xl border p-3" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-                        <input type="email" placeholder="Email (optional)" className="rounded-xl border p-3" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+                        <label className="text-sm font-semibold text-slate-700">Phone Number
+                            <input required placeholder="+255..." className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+                        </label>
+                        <label className="text-sm font-semibold text-slate-700">Email <span className="font-normal text-slate-400">(optional)</span>
+                            <input type="email" placeholder="name@example.com" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+                        </label>
                     </div>
+                    <label className="block text-sm font-semibold text-slate-700">Address
+                        <textarea required placeholder="Residential address" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+                    </label>
+                    <label className="block text-sm font-semibold text-slate-700">Customer TIN <span className="font-normal text-slate-400">(optional)</span>
+                        <input placeholder="TIN number for tax invoices" className="mt-1 w-full rounded-xl border p-3 font-normal" value={form.tin} onChange={(event) => setForm({ ...form, tin: event.target.value })} />
+                    </label>
+                    <label className="block text-sm font-semibold text-slate-700">Scanned Registration Form <span className="font-normal text-slate-400">(PDF, maximum 5 MB)</span>
+                        <input type="file" accept="application/pdf" className="mt-1 w-full rounded-xl border bg-white p-3 font-normal" onChange={(event) => setRegistrationForm(event.target.files?.[0] || null)} />
+                    </label>
                     <div className="rounded-xl bg-slate-50 p-4">
                         <p className="mb-3 text-xs font-bold uppercase text-slate-500">Emergency contact — required for minors</p>
                         <div className="space-y-3">

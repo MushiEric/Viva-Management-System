@@ -10,7 +10,9 @@ use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use App\Modules\Finance\Infrastructure\Models\Invoice;
 use App\Modules\Finance\Infrastructure\Models\InvoiceItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -19,8 +21,11 @@ class TraineeManagementTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Trainee $trainee;
+
     private Cohort $source;
+
     private Cohort $target;
 
     protected function setUp(): void
@@ -41,6 +46,7 @@ class TraineeManagementTest extends TestCase
             'date_of_birth' => '2000-05-10',
             'gender' => 'female',
             'phone' => '0784000000',
+            'address' => 'Kigamboni, Dar es Salaam',
         ]);
         $course = Course::create(['name' => 'Python']);
         $this->source = $this->cohort($course, 'Python Morning');
@@ -72,12 +78,16 @@ class TraineeManagementTest extends TestCase
             'full_name' => $this->trainee->full_name,
             'date_of_birth' => now()->subYears(12)->toDateString(),
             'gender' => 'female',
+            'phone' => $this->trainee->phone,
+            'address' => $this->trainee->address,
         ])->assertUnprocessable();
 
         $this->putJson("/api/v1/trainees/{$this->trainee->id}", [
             'full_name' => $this->trainee->full_name,
             'date_of_birth' => now()->subYears(12)->toDateString(),
             'gender' => 'female',
+            'phone' => $this->trainee->phone,
+            'address' => $this->trainee->address,
             'emergency_contact' => [
                 'full_name' => 'Parent Name',
                 'relationship' => 'Mother',
@@ -89,6 +99,37 @@ class TraineeManagementTest extends TestCase
             'trainee_id' => $this->trainee->id,
             'relationship' => 'Mother',
         ]);
+    }
+
+    public function test_staff_can_upload_a_registration_pdf(): void
+    {
+        Storage::fake('local');
+
+        $response = $this->post('/api/v1/trainees', [
+            'full_name' => 'Neema Student',
+            'date_of_birth' => '2001-04-20',
+            'gender' => 'female',
+            'phone' => '0712345678',
+            'address' => 'Temeke, Dar es Salaam',
+            'registration_form' => UploadedFile::fake()->create('registration.pdf', 500, 'application/pdf'),
+        ])->assertCreated();
+
+        $path = $response->json('data.registration_form_path');
+        Storage::disk('local')->assertExists($path);
+    }
+
+    public function test_registration_form_cannot_exceed_five_megabytes(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/api/v1/trainees', [
+            'full_name' => 'Large File Student',
+            'date_of_birth' => '2001-04-20',
+            'gender' => 'male',
+            'phone' => '0712345678',
+            'address' => 'Temeke, Dar es Salaam',
+            'registration_form' => UploadedFile::fake()->create('registration.pdf', 5121, 'application/pdf'),
+        ])->assertJsonValidationErrors('registration_form');
     }
 
     public function test_active_trainee_cannot_be_deactivated(): void

@@ -8,79 +8,114 @@ use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 final readonly class TraineeRegistrationService
 {
-    public function __construct(private AuditLogger $audit)
-    {
-    }
+    public function __construct(private AuditLogger $audit) {}
 
     public function register(array $data, User $actor): Trainee
     {
-        return DB::transaction(function () use ($data, $actor) {
-            $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
-            $emergency = $data['emergency_contact'] ?? null;
+        $documentPath = isset($data['registration_form'])
+            ? $data['registration_form']->store('trainee-registration-forms', 'local')
+            : null;
 
-            if ($isMinor && empty($emergency)) {
-                throw new DomainException('Emergency contact information is required for a minor.');
+        try {
+            return DB::transaction(function () use ($data, $actor, $documentPath) {
+                $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
+                $emergency = $data['emergency_contact'] ?? null;
+
+                if ($isMinor && empty($emergency)) {
+                    throw new DomainException('Emergency contact information is required for a minor.');
+                }
+
+                $trainee = Trainee::create([
+                    'trainee_number' => 'PENDING-'.str()->uuid(),
+                    'full_name' => $data['full_name'],
+                    'date_of_birth' => $data['date_of_birth'],
+                    'gender' => $data['gender'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
+                    'tin' => $data['tin'] ?? null,
+                    'address' => $data['address'],
+                    'occupation' => $data['occupation'] ?? null,
+                    'registration_form_path' => $documentPath,
+                ]);
+
+                $trainee->update([
+                    'trainee_number' => sprintf('VDC-%s-%06d', now()->format('Y'), $trainee->id),
+                ]);
+
+                if ($emergency) {
+                    $trainee->emergencyContact()->create($emergency);
+                }
+
+                $this->audit->record($actor, 'trainee.created', $trainee, null, $trainee->fresh()->toArray());
+
+                return $trainee->load('emergencyContact');
+            });
+        } catch (Throwable $exception) {
+            if ($documentPath) {
+                Storage::disk('local')->delete($documentPath);
             }
 
-            $trainee = Trainee::create([
-                'trainee_number' => 'PENDING-'.str()->uuid(),
-                'full_name' => $data['full_name'],
-                'date_of_birth' => $data['date_of_birth'],
-                'gender' => $data['gender'],
-                'phone' => $data['phone'] ?? null,
-                'email' => $data['email'] ?? null,
-                'address' => $data['address'] ?? null,
-                'occupation' => $data['occupation'] ?? null,
-            ]);
-
-            $trainee->update([
-                'trainee_number' => sprintf('VDC-%s-%06d', now()->format('Y'), $trainee->id),
-            ]);
-
-            if ($emergency) {
-                $trainee->emergencyContact()->create($emergency);
-            }
-
-            $this->audit->record($actor, 'trainee.created', $trainee, null, $trainee->fresh()->toArray());
-
-            return $trainee->load('emergencyContact');
-        });
+            throw $exception;
+        }
     }
 
     public function update(Trainee $trainee, array $data, User $actor): Trainee
     {
-        return DB::transaction(function () use ($trainee, $data, $actor) {
-            $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
-            $emergency = $data['emergency_contact'] ?? null;
+        $oldDocumentPath = $trainee->registration_form_path;
+        $newDocumentPath = isset($data['registration_form'])
+            ? $data['registration_form']->store('trainee-registration-forms', 'local')
+            : null;
 
-            if ($isMinor && empty($emergency)) {
-                throw new DomainException('Emergency contact information is required for a minor.');
+        try {
+            $updated = DB::transaction(function () use ($trainee, $data, $actor, $newDocumentPath) {
+                $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
+                $emergency = $data['emergency_contact'] ?? null;
+
+                if ($isMinor && empty($emergency)) {
+                    throw new DomainException('Emergency contact information is required for a minor.');
+                }
+
+                $before = $trainee->load('emergencyContact')->toArray();
+                $trainee->update([
+                    'full_name' => $data['full_name'],
+                    'date_of_birth' => $data['date_of_birth'],
+                    'gender' => $data['gender'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
+                    'tin' => $data['tin'] ?? null,
+                    'address' => $data['address'],
+                    'occupation' => $data['occupation'] ?? null,
+                    'registration_form_path' => $newDocumentPath ?? $trainee->registration_form_path,
+                ]);
+
+                if ($emergency) {
+                    $trainee->emergencyContact()->updateOrCreate([], $emergency);
+                } elseif (! $isMinor) {
+                    $trainee->emergencyContact()->delete();
+                }
+
+                $this->audit->record($actor, 'trainee.updated', $trainee, $before, $trainee->fresh()->load('emergencyContact')->toArray());
+
+                return $trainee->fresh()->load('emergencyContact');
+            });
+        } catch (Throwable $exception) {
+            if ($newDocumentPath) {
+                Storage::disk('local')->delete($newDocumentPath);
             }
 
-            $before = $trainee->load('emergencyContact')->toArray();
-            $trainee->update([
-                'full_name' => $data['full_name'],
-                'date_of_birth' => $data['date_of_birth'],
-                'gender' => $data['gender'],
-                'phone' => $data['phone'] ?? null,
-                'email' => $data['email'] ?? null,
-                'address' => $data['address'] ?? null,
-                'occupation' => $data['occupation'] ?? null,
-            ]);
+            throw $exception;
+        }
 
-            if ($emergency) {
-                $trainee->emergencyContact()->updateOrCreate([], $emergency);
-            } elseif (!$isMinor) {
-                $trainee->emergencyContact()->delete();
-            }
+        if ($newDocumentPath && $oldDocumentPath) {
+            Storage::disk('local')->delete($oldDocumentPath);
+        }
 
-            $this->audit->record($actor, 'trainee.updated', $trainee, $before, $trainee->fresh()->load('emergencyContact')->toArray());
-
-            return $trainee->fresh()->load('emergencyContact');
-        });
+        return $updated;
     }
 
     public function deactivate(Trainee $trainee, User $actor): void

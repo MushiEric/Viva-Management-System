@@ -4,13 +4,17 @@ namespace App\Modules\Finance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
+use App\Modules\Finance\Application\InvoicePdfService;
 use App\Modules\Finance\Application\InvoiceService;
 use App\Modules\Finance\Application\PaymentService;
+use App\Modules\Finance\Application\ReceiptPdfService;
 use App\Modules\Finance\Infrastructure\Models\DiscountRequest;
 use App\Modules\Finance\Infrastructure\Models\Invoice;
 use App\Modules\Finance\Infrastructure\Models\Payment;
+use App\Modules\Settings\Infrastructure\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 
 final class FinanceController extends Controller
@@ -63,9 +67,46 @@ final class FinanceController extends Controller
         ], 201);
     }
 
+    public function showInvoice(Invoice $invoice): JsonResponse
+    {
+        $invoice->load([
+            'trainee',
+            'items',
+            'creator:id,name,email',
+            'allocations.payment:id,receipt_number,status,paid_at',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'invoice' => $invoice,
+                'balance_due' => max(0, (float) $invoice->total - (float) $invoice->amount_paid),
+                'settings' => SystemSetting::current(),
+            ],
+        ]);
+    }
+
     public function issueInvoice(Request $request, Invoice $invoice, InvoiceService $service): JsonResponse
     {
         return response()->json(['success' => true, 'data' => $service->issue($invoice, $request->user())]);
+    }
+
+    public function downloadInvoice(Invoice $invoice, InvoicePdfService $pdf): Response
+    {
+        abort_if(in_array($invoice->status, ['draft', 'cancelled'], true), 422, 'Only issued invoices can be printed.');
+
+        return response($pdf->render($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$invoice->invoice_number}.pdf\"",
+        ]);
+    }
+
+    public function downloadReceipt(Payment $payment, ReceiptPdfService $pdf): Response
+    {
+        return response($pdf->render($payment), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$payment->receipt_number}.pdf\"",
+        ]);
     }
 
     public function requestDiscount(Request $request, Invoice $invoice, InvoiceService $service): JsonResponse

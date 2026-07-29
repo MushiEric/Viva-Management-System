@@ -2,6 +2,7 @@
 
 namespace App\Modules\Enrollment\Infrastructure\Models;
 
+use App\Models\Enrollment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -18,8 +19,10 @@ class Trainee extends Model
         'gender',
         'phone',
         'email',
+        'tin',
         'address',
         'occupation',
+        'registration_form_path',
     ];
 
     protected function casts(): array
@@ -34,7 +37,7 @@ class Trainee extends Model
 
     public function enrollments(): HasMany
     {
-        return $this->hasMany(\App\Models\Enrollment::class);
+        return $this->hasMany(Enrollment::class);
     }
 
     public function isMinor(): bool

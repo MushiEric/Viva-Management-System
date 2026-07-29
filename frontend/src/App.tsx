@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { api } from './services/api';
@@ -15,7 +15,11 @@ import Learning from './pages/Learning';
 import Finance from './pages/Finance';
 import Resources from './pages/Resources';
 import Dashboard from './pages/Dashboard';
-import { LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, X } from 'lucide-react';
+import Enquiries from './pages/Enquiries';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
+import AuditLogs from './pages/AuditLogs';
+import { Activity, ChevronDown, LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, MessageSquareText, Settings2, UserCircle, X } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -36,6 +40,8 @@ function NavigationLayout() {
     const { user, isAuthenticated, logout } = useAuthStore();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
+    const isBusy = useIsFetching() + useIsMutating() > 0;
     const isOfficeAdmin = user?.role === 'manager' || user?.role === 'admin';
     const navigationItems = [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, visible: true },
@@ -45,9 +51,12 @@ function NavigationLayout() {
         { to: '/trainees', label: 'Trainees', icon: ContactRound, visible: true },
         { to: '/learning', label: 'Learning', icon: GraduationCap, visible: true },
         { to: '/finance', label: 'Finance', icon: WalletCards, visible: isOfficeAdmin },
+        { to: '/enquiries', label: 'Enquiries', icon: MessageSquareText, visible: isOfficeAdmin },
         { to: '/resources', label: 'Resources', icon: FolderOpen, visible: true },
         { to: '/staff', label: 'Staff', icon: UsersRound, visible: isOfficeAdmin },
         { to: '/cohorts', label: 'Cohorts', icon: CalendarRange, visible: isOfficeAdmin },
+        { to: '/settings', label: 'Settings', icon: Settings2, visible: isOfficeAdmin },
+        { to: '/audit-logs', label: 'Audit Logs', icon: Activity, visible: isOfficeAdmin },
     ];
 
     const handleLogout = async () => {
@@ -61,6 +70,7 @@ function NavigationLayout() {
 
     return (
         <div className={`min-h-screen bg-slate-50 text-ink ${isAuthenticated ? 'lg:flex' : ''}`}>
+            {isBusy && <div className="fixed inset-x-0 top-0 z-[100] h-1 animate-pulse bg-viva-blue" />}
             {isAuthenticated ? (
                 <>
                     {sidebarOpen && (
@@ -135,12 +145,25 @@ function NavigationLayout() {
 
             <div className="flex min-h-screen min-w-0 flex-1 flex-col">
                 {isAuthenticated && (
-                    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md lg:hidden">
-                        <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-xl border border-slate-200 p-2 text-slate-600" aria-label="Open sidebar">
+                    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md sm:px-6">
+                        <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden" aria-label="Open sidebar">
                             <Menu className="h-5 w-5" />
                         </button>
-                        <img src="/viva_logo.jpeg" alt="Viva Digital Center" className="h-12 w-auto object-contain" />
-                        <div className="w-10 text-right text-xs font-bold uppercase text-slate-500">{user?.role}</div>
+                        <p className="hidden font-display text-sm font-bold text-slate-500 lg:block">VIVA Management Portal</p>
+                        <div className="relative">
+                            <button onClick={() => setProfileOpen((open) => !open)} className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-100">
+                                <UserCircle className="h-7 w-7 text-viva-blue" />
+                                <span className="hidden text-left sm:block"><span className="block text-sm font-bold">{user?.name}</span><span className="block text-[10px] font-bold uppercase text-slate-400">{user?.role}</span></span>
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                            </button>
+                            {profileOpen && (
+                                <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border bg-white shadow-xl">
+                                    <div className="border-b p-4"><p className="font-bold">{user?.name}</p><p className="text-xs text-slate-500">{user?.email}</p><p className="mt-1 text-xs font-bold uppercase text-viva-blue">{user?.role}</p></div>
+                                    <Link to="/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold hover:bg-slate-50"><UserCircle className="h-4 w-4" /> Profile & Password</Link>
+                                    <button onClick={handleLogout} className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"><LogOut className="h-4 w-4" /> Logout</button>
+                                </div>
+                            )}
+                        </div>
                     </header>
                 )}
 
@@ -154,6 +177,10 @@ function NavigationLayout() {
                         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
                         <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
                         <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+                        <Route path="/enquiries" element={<ProtectedRoute><Enquiries /></ProtectedRoute>} />
+                        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                        <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
                         <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
                         <Route path="/trainees" element={<ProtectedRoute><Trainees /></ProtectedRoute>} />
                         <Route path="/cohorts" element={<ProtectedRoute><Cohorts /></ProtectedRoute>} />

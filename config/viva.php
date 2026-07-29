@@ -7,6 +7,7 @@ return [
         'phone' => '0784906044',
         'website' => 'vivadigitalcenter.com',
         'email' => 'vivadigitalcenter@gmail.com',
+        'tin' => '154-227-148',
         'motto' => 'Learning By Doing',
         'hours' => [
             'monday_friday' => '08:30 AM - 09:00 PM',

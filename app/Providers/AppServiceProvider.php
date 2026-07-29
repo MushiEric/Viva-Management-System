@@ -2,33 +2,35 @@
 
 namespace App\Providers;
 
-use App\Shared\Application\EventBus;
-use App\Shared\Infrastructure\LaravelEventBus;
 use App\Modules\Certification\Listeners\IssueCertificateOnCompletion;
-use App\Modules\Communication\Listeners\SendEnrollmentConfirmation;
-use App\Modules\Communication\Listeners\SendPaymentConfirmation;
-use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
-use App\Modules\Finance\Domain\Events\PaymentRecorded;
-use App\Modules\Learning\Domain\Events\EnrollmentCompleted;
-use Illuminate\Support\Facades\Event;
-use App\Modules\Communication\Listeners\SendStaffApprovalEmail;
-use App\Modules\Identity\Domain\Events\StaffAccountApproved;
+use App\Modules\Communication\Domain\Events\ClassReminderDue;
+use App\Modules\Communication\Domain\Events\ContactInquirySubmitted;
+use App\Modules\Communication\Listeners\NotifyFacilitatorsOfCohortSchedule;
 use App\Modules\Communication\Listeners\NotifyManagersOfProgramSubmission;
 use App\Modules\Communication\Listeners\NotifyProgramCreatorOfApproval;
 use App\Modules\Communication\Listeners\NotifyProgramCreatorOfChanges;
+use App\Modules\Communication\Listeners\SendClassReminderEmail;
+use App\Modules\Communication\Listeners\SendContactInquiryEmails;
+use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
+use App\Modules\Communication\Listeners\SendEnrollmentConfirmation;
+use App\Modules\Communication\Listeners\SendInvoiceEmail;
+use App\Modules\Communication\Listeners\SendPaymentConfirmation;
+use App\Modules\Communication\Listeners\SendStaffApprovalEmail;
+use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
+use App\Modules\Finance\Domain\Events\DiscountApproved;
+use App\Modules\Finance\Domain\Events\InvoiceIssued;
+use App\Modules\Finance\Domain\Events\PaymentRecorded;
+use App\Modules\Identity\Domain\Events\StaffAccountApproved;
+use App\Modules\Learning\Domain\Events\EnrollmentCompleted;
+use App\Modules\Training\Domain\Events\CohortScheduled;
 use App\Modules\Training\Domain\Events\ProgramApproved;
 use App\Modules\Training\Domain\Events\ProgramChangesRequested;
 use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
-use App\Modules\Communication\Listeners\NotifyFacilitatorsOfCohortSchedule;
-use App\Modules\Training\Domain\Events\CohortScheduled;
-use App\Modules\Communication\Listeners\SendInvoiceEmail;
-use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
-use App\Modules\Finance\Domain\Events\InvoiceIssued;
-use App\Modules\Finance\Domain\Events\DiscountApproved;
-use App\Modules\Communication\Domain\Events\ClassReminderDue;
-use App\Modules\Communication\Listeners\SendClassReminderEmail;
+use App\Shared\Application\EventBus;
+use App\Shared\Infrastructure\LaravelEventBus;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -65,5 +67,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(InvoiceIssued::class, SendInvoiceEmail::class);
         Event::listen(DiscountApproved::class, SendDiscountApprovalEmail::class);
         Event::listen(ClassReminderDue::class, SendClassReminderEmail::class);
+        Event::listen(ContactInquirySubmitted::class, SendContactInquiryEmails::class);
     }
 }

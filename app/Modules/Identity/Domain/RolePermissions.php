@@ -27,6 +27,9 @@ final class RolePermissions
                 Permission::IssueCertificates,
                 Permission::ViewReports,
                 Permission::ViewAudit,
+                Permission::ViewEnquiries,
+                Permission::ManageEnquiries,
+                Permission::ManageSettings,
             ],
             StaffRole::Facilitator => [
                 Permission::ViewTrainees,

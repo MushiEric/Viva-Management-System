@@ -7,6 +7,16 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## VIVA API Documentation
+
+- Interactive Swagger UI: `http://localhost:8000/api/documentation`
+- OpenAPI 3.1 specification: `http://localhost:8000/api/openapi.yaml`
+- Postman collection: `http://localhost:8000/api/postman-collection`
+- Source specification: `docs/openapi.yaml`
+
+Use `POST /api/v1/token` to obtain a Sanctum bearer token, then select
+**Authorize** in Swagger UI or set the `token` collection variable in Postman.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

@@ -15,6 +15,7 @@ class StaffManagementTest extends TestCase
     use RefreshDatabase;
 
     private User $manager;
+
     private User $admin;
 
     protected function setUp(): void
@@ -51,8 +52,8 @@ class StaffManagementTest extends TestCase
             'email' => 'facilitator@example.com',
             'phone' => '0784000000',
             'role' => 'facilitator',
-            'password' => 'six123',
-            'password_confirmation' => 'six123',
+            'password' => 'StrongPass123!',
+            'password_confirmation' => 'StrongPass123!',
         ]);
 
         $response->assertCreated()->assertJsonPath('data.status', 'pending');

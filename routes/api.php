@@ -1,26 +1,29 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TimetableController;
-use App\Modules\Enrollment\Http\Controllers\TraineeController;
-use App\Modules\Enrollment\Http\Controllers\EnrollmentController as StaffEnrollmentController;
-use App\Modules\Identity\Http\Controllers\StaffController;
-use App\Modules\Training\Http\Controllers\ProgramController;
-use App\Modules\Training\Http\Controllers\CohortController;
-use App\Modules\Learning\Http\Controllers\LearningController;
-use App\Modules\Finance\Http\Controllers\FinanceController;
-use App\Modules\Certification\Http\Controllers\CertificateController;
-use App\Modules\Training\Http\Controllers\LearningMaterialController;
-use App\Modules\Reporting\Http\Controllers\ReportingController;
 use App\Modules\Audit\Http\Controllers\AuditLogController;
+use App\Modules\Certification\Http\Controllers\CertificateController;
+use App\Modules\Communication\Http\Controllers\ContactInquiryController;
+use App\Modules\Enrollment\Http\Controllers\EnrollmentController as StaffEnrollmentController;
+use App\Modules\Enrollment\Http\Controllers\TraineeController;
+use App\Modules\Finance\Http\Controllers\FinanceController;
+use App\Modules\Identity\Http\Controllers\StaffController;
+use App\Modules\Learning\Http\Controllers\LearningController;
+use App\Modules\Reporting\Http\Controllers\ReportingController;
+use App\Modules\Settings\Http\Controllers\SystemSettingController;
+use App\Modules\Training\Http\Controllers\CohortController;
+use App\Modules\Training\Http\Controllers\LearningMaterialController;
+use App\Modules\Training\Http\Controllers\ProgramController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:api')->prefix('v1')->group(function () {
     // Authentication token endpoint
     Route::middleware('throttle:login')->post('/token', [AuthController::class, 'issueToken']);
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
+    Route::post('/contact-inquiries', [ContactInquiryController::class, 'store']);
 
     // Sanctum protected API endpoints
     Route::middleware('auth:sanctum')->group(function () {
@@ -28,8 +31,10 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
             return $request->user();
         });
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::put('/profile/password', [AuthController::class, 'changePassword']);
         Route::middleware('permission:trainees.view')->get('/trainees', [TraineeController::class, 'index']);
         Route::middleware('permission:trainees.view')->get('/trainees/{trainee}', [TraineeController::class, 'show']);
+        Route::middleware('permission:trainees.view')->get('/trainees/{trainee}/registration-form', [TraineeController::class, 'downloadRegistrationForm']);
         Route::middleware('permission:trainees.manage')->group(function () {
             Route::post('/trainees', [TraineeController::class, 'store']);
             Route::put('/trainees/{trainee}', [TraineeController::class, 'update']);
@@ -90,6 +95,9 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
         Route::middleware('permission:enrollments.complete')->post('/learning/enrollments/{enrollment}/complete', [LearningController::class, 'complete']);
 
         Route::middleware('permission:finance.view')->get('/finance', [FinanceController::class, 'index']);
+        Route::middleware('permission:finance.view')->get('/finance/invoices/{invoice}', [FinanceController::class, 'showInvoice']);
+        Route::middleware('permission:finance.view')->get('/finance/invoices/{invoice}/pdf', [FinanceController::class, 'downloadInvoice']);
+        Route::middleware('permission:finance.view')->get('/finance/payments/{payment}/pdf', [FinanceController::class, 'downloadReceipt']);
         Route::middleware('permission:finance.manage')->group(function () {
             Route::post('/finance/invoices', [FinanceController::class, 'createInvoice']);
             Route::post('/finance/invoices/{invoice}/issue', [FinanceController::class, 'issueInvoice']);
@@ -119,5 +127,11 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
         Route::get('/dashboard', [ReportingController::class, 'dashboard']);
         Route::middleware('permission:reports.view')->get('/reports', [ReportingController::class, 'report']);
         Route::middleware('permission:audit.view')->get('/audit-logs', [AuditLogController::class, 'index']);
+        Route::middleware('permission:enquiries.view')->get('/contact-inquiries', [ContactInquiryController::class, 'index']);
+        Route::middleware('permission:enquiries.manage')->patch('/contact-inquiries/{inquiry}', [ContactInquiryController::class, 'update']);
+        Route::middleware('permission:settings.manage')->group(function () {
+            Route::get('/settings', [SystemSettingController::class, 'show']);
+            Route::put('/settings', [SystemSettingController::class, 'update']);
+        });
     });
 });
