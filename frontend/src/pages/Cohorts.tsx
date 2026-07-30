@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { AlertCircle, CalendarClock, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
+import { confirmToast } from '../components/ConfirmToast';
 
 interface LevelOption {
     id: number;
@@ -180,7 +181,7 @@ export default function Cohorts() {
                     <article key={cohort.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${cohort.deleted_at ? 'opacity-50' : ''}`}>
                         <div className="flex justify-between gap-4">
                             <div><h2 className="font-display text-lg font-bold">{cohort.name}</h2><p className="text-sm text-slate-500">{cohort.program_level?.program.name} — {cohort.program_level?.name}</p></div>
-                            {!cohort.deleted_at && <div className="flex gap-2"><button onClick={() => edit(cohort)} className="rounded-lg border p-2 text-viva-blue"><Pencil className="h-4 w-4" /></button><button onClick={() => deactivate.mutate(cohort.id)} className="rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>}
+                            {!cohort.deleted_at && <div className="flex gap-2"><button onClick={() => edit(cohort)} className="rounded-lg border p-2 text-viva-blue"><Pencil className="h-4 w-4" /></button><button onClick={() => confirmToast({ title: `Deactivate ${cohort.name}?`, message: 'The cohort will no longer be available for new enrollment.', confirmLabel: 'Deactivate Cohort', onConfirm: () => deactivate.mutate(cohort.id) })} className="rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>}
                         </div>
                         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-xs">
                             <p><strong>Dates:</strong><br />{cohort.start_date} – {cohort.end_date}</p>

@@ -64,6 +64,100 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /forgot-password/otp:
+    post:
+      tags: [Authentication]
+      summary: Request a password reset OTP verification code
+      operationId: requestPasswordOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+            example:
+              email: user@example.com
+      responses:
+        '200':
+          description: OTP requested successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /forgot-password/verify-otp:
+    post:
+      tags: [Authentication]
+      summary: Verify if a password reset OTP verification code is valid
+      operationId: verifyOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email: { type: string, format: email }
+                otp: { type: string, minLength: 6, maxLength: 6 }
+            example:
+              email: user@example.com
+              otp: "123456"
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /reset-password/otp:
+    post:
+      tags: [Authentication]
+      summary: Reset user password using OTP verification code
+      operationId: resetPasswordWithOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp, password, password_confirmation]
+              properties:
+                email: { type: string, format: email }
+                otp: { type: string, minLength: 6, maxLength: 6 }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+            example:
+              email: user@example.com
+              otp: "123456"
+              password: "NewPassword123!"
+              password_confirmation: "NewPassword123!"
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /logout:
     post:
       tags: [Authentication]
@@ -105,6 +199,70 @@ paths:
           $ref: '#/components/responses/Success'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /notifications:
+    get:
+      tags: [Communications]
+      summary: List the authenticated user's in-app notifications
+      operationId: listNotifications
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 15
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+  /notification-settings:
+    get:
+      tags: [Communications]
+      summary: Get the authenticated user's notification preferences
+      operationId: getNotificationSettings
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+    put:
+      tags: [Communications]
+      summary: Enable or disable email notification copies
+      description: In-app notifications are mandatory and cannot be disabled.
+      operationId: updateNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email_notifications_enabled]
+              properties:
+                email_notifications_enabled:
+                  type: boolean
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /notifications/{notification}/read:
+    patch:
+      tags: [Communications]
+      summary: Mark one notification as read
+      operationId: markNotificationRead
+      parameters:
+        - $ref: '#/components/parameters/NotificationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /notifications/read-all:
+    post:
+      tags: [Communications]
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
   /timetable:
     get:
       tags: [Public]
@@ -199,6 +357,17 @@ paths:
           $ref: '#/components/responses/DataResponse'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /trainee-options:
+    get:
+      tags: [Trainees]
+      summary: List active trainees for selection fields
+      operationId: getTraineeOptions
+      x-permission: trainees.view
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /trainees/{trainee}:
     get:
       tags: [Trainees]
@@ -1169,6 +1338,13 @@ components:
       in: path
       required: true
       schema: { type: integer }
+    NotificationId:
+      name: notification
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   requestBodies:
     GenericJson:
       required: true

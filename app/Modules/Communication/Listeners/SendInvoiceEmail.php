@@ -2,6 +2,7 @@
 
 namespace App\Modules\Communication\Listeners;
 
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Finance\Domain\Events\InvoiceIssued;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,9 +14,17 @@ final class SendInvoiceEmail implements ShouldQueueAfterCommit
 
     public function handle(InvoiceIssued $event): void
     {
-        $invoice = $event->invoice->loadMissing('trainee');
+        $invoice = $event->invoice->loadMissing('trainee', 'creator');
 
-        if (!$invoice->trainee->email) {
+        $invoice->creator?->notify(new PortalNotification(
+            'finance',
+            'Invoice Issued',
+            "Invoice {$invoice->invoice_number} was issued for TZS {$invoice->total}.",
+            '/finance',
+            ['invoice_id' => $invoice->id],
+        ));
+
+        if (! $invoice->trainee->email) {
             return;
         }
 

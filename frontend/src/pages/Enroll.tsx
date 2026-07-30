@@ -36,7 +36,7 @@ export default function Enroll() {
     const [registrationForm, setRegistrationForm] = useState<File | null>(null);
 
     const timetable = useQuery({ queryKey: ['timetable'], queryFn: api.getTimetable });
-    const trainees = useQuery({ queryKey: ['trainees'], queryFn: () => api.getTrainees() });
+    const trainees = useQuery({ queryKey: ['trainee-options'], queryFn: api.getTraineeOptions });
 
     const createTrainee = useMutation({
         mutationFn: () => {
@@ -60,6 +60,7 @@ export default function Enroll() {
         onSuccess: (response) => {
             setTraineeId(response.data.id);
             queryClient.invalidateQueries({ queryKey: ['trainees'] });
+            queryClient.invalidateQueries({ queryKey: ['trainee-options'] });
             toast.success('Trainee record created.');
         },
         onError: (error: Error) => toast.error(error.message),
@@ -85,7 +86,7 @@ export default function Enroll() {
     };
 
     const cohortList = (timetable.data?.data || []) as Cohort[];
-    const traineeList = (trainees.data?.data?.data || []) as Trainee[];
+    const traineeList = (trainees.data?.data || []) as Trainee[];
 
     return (
         <div className="grid gap-8 lg:grid-cols-2">

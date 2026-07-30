@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\TimetableController;
 use App\Modules\Audit\Http\Controllers\AuditLogController;
 use App\Modules\Certification\Http\Controllers\CertificateController;
 use App\Modules\Communication\Http\Controllers\ContactInquiryController;
+use App\Modules\Communication\Http\Controllers\NotificationController;
 use App\Modules\Enrollment\Http\Controllers\EnrollmentController as StaffEnrollmentController;
 use App\Modules\Enrollment\Http\Controllers\TraineeController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
@@ -19,11 +20,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:api')->prefix('v1')->group(function () {
-    // Authentication token endpoint
+    // Authentication token & password reset endpoints
     Route::middleware('throttle:login')->post('/token', [AuthController::class, 'issueToken']);
+    Route::middleware('throttle:6,1')->post('/forgot-password/otp', [AuthController::class, 'requestPasswordOtp']);
+    Route::middleware('throttle:6,1')->post('/forgot-password/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::middleware('throttle:6,1')->post('/reset-password/otp', [AuthController::class, 'resetPasswordWithOtp']);
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
     Route::post('/contact-inquiries', [ContactInquiryController::class, 'store']);
+
 
     // Sanctum protected API endpoints
     Route::middleware('auth:sanctum')->group(function () {
@@ -32,7 +37,13 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
         });
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::put('/profile/password', [AuthController::class, 'changePassword']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notification-settings', [NotificationController::class, 'settings']);
+        Route::put('/notification-settings', [NotificationController::class, 'updateSettings']);
+        Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
         Route::middleware('permission:trainees.view')->get('/trainees', [TraineeController::class, 'index']);
+        Route::middleware('permission:trainees.view')->get('/trainee-options', [TraineeController::class, 'options']);
         Route::middleware('permission:trainees.view')->get('/trainees/{trainee}', [TraineeController::class, 'show']);
         Route::middleware('permission:trainees.view')->get('/trainees/{trainee}/registration-form', [TraineeController::class, 'downloadRegistrationForm']);
         Route::middleware('permission:trainees.manage')->group(function () {

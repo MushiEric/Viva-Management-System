@@ -19,6 +19,10 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
+    protected $attributes = [
+        'email_notifications_enabled' => true,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -27,6 +31,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_notifications_enabled',
         'password',
         'phone',
         'role',
@@ -55,6 +60,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_notifications_enabled' => 'boolean',
             'password' => 'hashed',
             'approved_at' => 'datetime',
         ];

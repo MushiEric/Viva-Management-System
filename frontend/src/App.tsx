@@ -19,6 +19,7 @@ import Enquiries from './pages/Enquiries';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import AuditLogs from './pages/AuditLogs';
+import NotificationBell from './components/NotificationBell';
 import { Activity, ChevronDown, LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, MessageSquareText, Settings2, UserCircle, X } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -150,7 +151,9 @@ function NavigationLayout() {
                             <Menu className="h-5 w-5" />
                         </button>
                         <p className="hidden font-display text-sm font-bold text-slate-500 lg:block">VIVA Management Portal</p>
-                        <div className="relative">
+                        <div className="flex items-center gap-2">
+                            <NotificationBell />
+                            <div className="relative">
                             <button onClick={() => setProfileOpen((open) => !open)} className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-slate-100">
                                 <UserCircle className="h-7 w-7 text-viva-blue" />
                                 <span className="hidden text-left sm:block"><span className="block text-sm font-bold">{user?.name}</span><span className="block text-[10px] font-bold uppercase text-slate-400">{user?.role}</span></span>
@@ -163,6 +166,7 @@ function NavigationLayout() {
                                     <button onClick={handleLogout} className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"><LogOut className="h-4 w-4" /> Logout</button>
                                 </div>
                             )}
+                            </div>
                         </div>
                     </header>
                 )}

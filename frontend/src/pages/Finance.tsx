@@ -75,7 +75,7 @@ export default function Finance() {
     const [previewInvoiceId, setPreviewInvoiceId] = useState<number | null>(null);
 
     const financeQuery = useQuery({ queryKey: ['finance'], queryFn: api.getFinance });
-    const traineesQuery = useQuery({ queryKey: ['trainees'], queryFn: () => api.getTrainees() });
+    const traineesQuery = useQuery({ queryKey: ['trainee-options'], queryFn: api.getTraineeOptions });
     const traineeDetailQuery = useQuery({ queryKey: ['finance-trainee', traineeId], queryFn: () => api.getTrainee(traineeId), enabled: !!traineeId });
     const invoicePreviewQuery = useQuery({
         queryKey: ['invoice-preview', previewInvoiceId],
@@ -142,7 +142,7 @@ export default function Finance() {
     const data = financeQuery.data?.data;
     const invoices = (data?.invoices || []) as Invoice[];
     const payments = (data?.payments || []) as Payment[];
-    const trainees = (traineesQuery.data?.data?.data || []) as Trainee[];
+    const trainees = (traineesQuery.data?.data || []) as Trainee[];
     const enrollments = (traineeDetailQuery.data?.data?.trainee?.enrollments || []) as Enrollment[];
     const activeEnrollments = enrollments.filter((item) => !['cancelled', 'withdrawn'].includes(item.status));
     const paymentInvoices = invoices.filter((invoice) => invoice.trainee_id === paymentTraineeId && ['issued', 'partially_paid', 'overdue'].includes(invoice.status));

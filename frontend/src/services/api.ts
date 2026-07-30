@@ -137,6 +137,13 @@ export const api = {
         return handleResponse(response);
     },
 
+    async getTraineeOptions(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/trainee-options`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
     async createTrainee(payload: FormData): Promise<ApiResponse> {
         const token = localStorage.getItem('viva_auth_token');
         const response = await fetch(`${BASE_URL}/trainees`, {
@@ -621,6 +628,81 @@ export const api = {
         return handleResponse(response);
     },
 
+    async getNotifications(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/notifications?per_page=15`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async markNotificationRead(notificationId: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/notifications/${notificationId}/read`, {
+            method: 'PATCH',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async markAllNotificationsRead(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/notifications/read-all`, {
+            method: 'POST',
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async getNotificationSettings(): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/notification-settings`, {
+            headers: getHeaders(true),
+        });
+        return handleResponse(response);
+    },
+
+    async updateNotificationSettings(emailNotificationsEnabled: boolean): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/notification-settings`, {
+            method: 'PUT',
+            headers: getHeaders(true),
+            body: JSON.stringify({ email_notifications_enabled: emailNotificationsEnabled }),
+        });
+        return handleResponse(response);
+    },
+
+    /**
+     * Request password reset OTP code.
+     */
+    async requestPasswordOtp(email: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/forgot-password/otp`, {
+            method: 'POST',
+            headers: getHeaders(false),
+            body: JSON.stringify({ email }),
+        });
+        return handleResponse(response);
+    },
+
+    /**
+     * Verify OTP code validity.
+     */
+    async verifyOtp(email: string, otp: string): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/forgot-password/verify-otp`, {
+            method: 'POST',
+            headers: getHeaders(false),
+            body: JSON.stringify({ email, otp }),
+        });
+        return handleResponse(response);
+    },
+
+    /**
+     * Reset password using OTP code.
+     */
+    async resetPasswordWithOtp(payload: { email: string; otp: string; password: string; password_confirmation: string }): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/reset-password/otp`, {
+            method: 'POST',
+            headers: getHeaders(false),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
     /**
      * Get authenticated user profile.
      */
@@ -640,3 +722,4 @@ export const api = {
         await handleResponse(response);
     }
 };
+

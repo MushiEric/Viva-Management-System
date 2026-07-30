@@ -2,22 +2,19 @@
 
 namespace App\Modules\Communication\Listeners;
 
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Identity\Domain\Events\StaffAccountApproved;
-use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-final class SendStaffApprovalEmail implements ShouldQueueAfterCommit
+final class SendStaffApprovalEmail implements ShouldHandleEventsAfterCommit
 {
-    use InteractsWithQueue;
-
     public function handle(StaffAccountApproved $event): void
     {
-        Mail::raw(
-            "Hello {$event->staff->name}, your VIVA DIGITAL CENTER staff account has been approved.",
-            fn ($message) => $message
-                ->to($event->staff->email)
-                ->subject('Staff Account Approved'),
-        );
+        $event->staff->notify(new PortalNotification(
+            'staff',
+            'Staff Account Approved',
+            'Your VIVA DIGITAL CENTER staff account has been approved.',
+            '/dashboard',
+        ));
     }
 }

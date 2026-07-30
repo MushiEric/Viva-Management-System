@@ -3,30 +3,27 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Models\User;
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
-use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-final class NotifyManagersOfProgramSubmission implements ShouldQueueAfterCommit
+final class NotifyManagersOfProgramSubmission implements ShouldHandleEventsAfterCommit
 {
-    use InteractsWithQueue;
-
     public function handle(ProgramSubmittedForApproval $event): void
     {
-        $emails = User::query()
+        $managers = User::query()
             ->where('role', 'manager')
             ->where('status', 'approved')
-            ->pluck('email')
-            ->all();
+            ->get();
 
-        if ($emails === []) {
-            return;
+        foreach ($managers as $manager) {
+            $manager->notify(new PortalNotification(
+                'program',
+                'Program Approval Required',
+                "Program \"{$event->program->name}\" is awaiting your review.",
+                '/programs',
+                ['program_id' => $event->program->id],
+            ));
         }
-
-        Mail::raw(
-            "Program \"{$event->program->name}\" is awaiting your review.",
-            fn ($message) => $message->to($emails)->subject('Program Approval Required'),
-        );
     }
 }

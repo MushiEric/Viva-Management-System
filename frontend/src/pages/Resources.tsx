@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Award, Download, FileUp, ScrollText, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { confirmToast } from '../components/ConfirmToast';
 
 interface Program {
     id: number;
@@ -133,7 +134,7 @@ export default function Resources() {
             <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {materials.map((material) => (
                     <article key={material.id} className="rounded-2xl border bg-white p-5 shadow-sm">
-                        <div className="flex justify-between gap-3"><div><p className="text-xs font-bold uppercase text-viva-blue">{material.program.name}</p><h2 className="mt-1 font-display text-lg font-bold">{material.title}</h2></div><button onClick={() => deactivate.mutate(material.id)} className="h-fit rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>
+                        <div className="flex justify-between gap-3"><div><p className="text-xs font-bold uppercase text-viva-blue">{material.program.name}</p><h2 className="mt-1 font-display text-lg font-bold">{material.title}</h2></div><button onClick={() => confirmToast({ title: `Deactivate ${material.title}?`, message: 'The learning material will no longer be available to portal users.', confirmLabel: 'Deactivate Material', onConfirm: () => deactivate.mutate(material.id) })} className="h-fit rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>
                         <p className="mt-2 text-sm text-slate-500">{material.description}</p>
                         <p className="mt-3 text-xs text-slate-400">Version {material.version} · Uploaded by {material.uploader.name}</p>
                         {material.material_type === 'file' ? (

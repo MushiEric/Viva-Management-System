@@ -2,22 +2,22 @@
 
 namespace App\Modules\Communication\Listeners;
 
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Training\Domain\Events\ProgramChangesRequested;
-use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-final class NotifyProgramCreatorOfChanges implements ShouldQueueAfterCommit
+final class NotifyProgramCreatorOfChanges implements ShouldHandleEventsAfterCommit
 {
-    use InteractsWithQueue;
-
     public function handle(ProgramChangesRequested $event): void
     {
         $creator = $event->program->creator;
 
-        Mail::raw(
+        $creator?->notify(new PortalNotification(
+            'program',
+            'Program Changes Requested',
             "Changes were requested for \"{$event->program->name}\": {$event->program->review_notes}",
-            fn ($message) => $message->to($creator->email)->subject('Program Changes Requested'),
-        );
+            '/programs',
+            ['program_id' => $event->program->id],
+        ));
     }
 }

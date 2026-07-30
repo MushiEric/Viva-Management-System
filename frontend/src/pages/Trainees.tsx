@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { ArrowRightLeft, Download, Pencil, Search, Trash2, UserRound } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { confirmToast } from '../components/ConfirmToast';
 
 interface TraineeSummary {
     id: number;
@@ -79,6 +80,7 @@ export default function Trainees() {
     const timetableQuery = useQuery({ queryKey: ['timetable'], queryFn: api.getTimetable });
     const refresh = () => {
         queryClient.invalidateQueries({ queryKey: ['trainees'] });
+        queryClient.invalidateQueries({ queryKey: ['trainee-options'] });
         queryClient.invalidateQueries({ queryKey: ['trainee', selectedId] });
         queryClient.invalidateQueries({ queryKey: ['timetable'] });
     };
@@ -211,7 +213,7 @@ export default function Trainees() {
                         <div className="space-y-6">
                             <div className="flex justify-between gap-4">
                                 <div><h2 className="font-display text-2xl font-extrabold">{selected.full_name}</h2><p className="text-sm text-slate-500">{selected.trainee_number}</p></div>
-                                {canManage && <div className="flex gap-2"><button onClick={() => setEditing(true)} className="rounded-lg border p-2 text-viva-blue"><Pencil className="h-4 w-4" /></button><button onClick={() => deactivate.mutate(selected.id)} className="rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>}
+                                {canManage && <div className="flex gap-2"><button onClick={() => setEditing(true)} className="rounded-lg border p-2 text-viva-blue"><Pencil className="h-4 w-4" /></button><button onClick={() => confirmToast({ title: `Deactivate ${selected.full_name}?`, message: 'This hides the trainee record from active use. Trainees with active enrollments cannot be deactivated.', confirmLabel: 'Deactivate Trainee', onConfirm: () => deactivate.mutate(selected.id) })} className="rounded-lg border p-2 text-red-500"><Trash2 className="h-4 w-4" /></button></div>}
                             </div>
                             <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-2">
                                 <p><strong>Date of birth:</strong> {selected.date_of_birth}</p><p><strong>Gender:</strong> {selected.gender}</p>

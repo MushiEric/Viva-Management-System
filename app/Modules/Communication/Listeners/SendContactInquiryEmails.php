@@ -3,9 +3,9 @@
 namespace App\Modules\Communication\Listeners;
 
 use App\Mail\ContactInquiryConfirmation;
-use App\Mail\ContactInquiryStaffNotification;
 use App\Models\User;
 use App\Modules\Communication\Domain\Events\ContactInquirySubmitted;
+use App\Modules\Communication\Notifications\PortalNotification;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
@@ -17,15 +17,19 @@ final class SendContactInquiryEmails implements ShouldQueueAfterCommit
     public function handle(ContactInquirySubmitted $event): void
     {
         $inquiry = $event->inquiry;
-        $staffEmails = User::query()
+        $staff = User::query()
             ->whereIn('role', ['manager', 'admin'])
             ->where('status', 'approved')
-            ->pluck('email')
-            ->filter()
-            ->all();
+            ->get();
 
-        if ($staffEmails !== []) {
-            Mail::to($staffEmails)->send(new ContactInquiryStaffNotification($inquiry));
+        foreach ($staff as $user) {
+            $user->notify(new PortalNotification(
+                'enquiry',
+                'New Website Enquiry',
+                "{$inquiry->name} submitted an enquiry about {$inquiry->program_of_interest}.",
+                '/enquiries',
+                ['inquiry_id' => $inquiry->id],
+            ));
         }
 
         Mail::to($inquiry->email)->send(new ContactInquiryConfirmation($inquiry));

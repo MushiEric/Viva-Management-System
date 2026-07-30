@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Training\Domain\Events\ProgramApproved;
 use App\Modules\Training\Domain\Events\ProgramFeeApproved;
 use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
@@ -10,6 +11,7 @@ use App\Modules\Training\Infrastructure\Models\Program;
 use App\Modules\Training\Infrastructure\Models\ProgramLevel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -18,7 +20,9 @@ class ProgramManagementTest extends TestCase
     use RefreshDatabase;
 
     private User $manager;
+
     private User $admin;
+
     private User $facilitator;
 
     protected function setUp(): void
@@ -104,6 +108,23 @@ class ProgramManagementTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('data.status', 'changes_requested')
             ->assertJsonPath('data.review_notes', 'Clarify practical learning outcomes.');
+    }
+
+    public function test_program_creator_receives_in_app_notification_when_program_is_approved(): void
+    {
+        Notification::fake();
+        $program = $this->programWithLevel();
+        $program->update(['status' => 'pending_approval']);
+        Sanctum::actingAs($this->manager);
+
+        $this->postJson("/api/v1/programs/{$program->id}/approve")->assertOk();
+
+        Notification::assertSentTo(
+            $this->facilitator,
+            PortalNotification::class,
+            fn ($notification) => $notification->title === 'Program Approved'
+                && $notification->metadata['program_id'] === $program->id,
+        );
     }
 
     public function test_admin_can_view_but_cannot_draft_or_approve_programs(): void

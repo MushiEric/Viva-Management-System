@@ -37,6 +37,17 @@ final class TraineeController extends Controller
         return response()->json(['success' => true, 'data' => $trainees]);
     }
 
+    public function options(): JsonResponse
+    {
+        $trainees = Trainee::query()
+            ->select(['id', 'trainee_number', 'full_name'])
+            ->whereNull('deleted_at')
+            ->orderBy('full_name')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $trainees]);
+    }
+
     public function show(
         Request $request,
         Trainee $trainee,

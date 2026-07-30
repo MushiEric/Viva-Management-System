@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle2, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { confirmToast } from '../components/ConfirmToast';
 
 interface PermissionOverride {
     permission: string;
@@ -144,7 +145,7 @@ export default function Staff() {
                                             <div className="flex justify-end gap-2">
                                                 {isManager && member.status === 'pending' && !member.deleted_at && <button title="Approve" onClick={() => approveStaff.mutate(member.id)} className="rounded-lg border p-2 text-green-600 hover:bg-green-50"><CheckCircle2 className="h-4 w-4" /></button>}
                                                 {isManager && !member.deleted_at && <button title="Permissions" onClick={() => openPermissions(member)} className="rounded-lg border p-2 text-viva-blue hover:bg-blue-50"><ShieldCheck className="h-4 w-4" /></button>}
-                                                {!member.deleted_at && member.id !== currentUser?.id && <button title="Deactivate" onClick={() => deactivateStaff.mutate(member.id)} className="rounded-lg border p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>}
+                                                {!member.deleted_at && member.id !== currentUser?.id && <button title="Deactivate" onClick={() => confirmToast({ title: `Deactivate ${member.name}?`, message: 'The staff member will lose portal access and their active tokens will be revoked.', confirmLabel: 'Deactivate Staff', onConfirm: () => deactivateStaff.mutate(member.id) })} className="rounded-lg border p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>}
                                             </div>
                                         </td>
                                     </tr>

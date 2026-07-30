@@ -2,30 +2,26 @@
 
 namespace App\Modules\Communication\Listeners;
 
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Training\Domain\Events\CohortScheduled;
-use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-final class NotifyFacilitatorsOfCohortSchedule implements ShouldQueueAfterCommit
+final class NotifyFacilitatorsOfCohortSchedule implements ShouldHandleEventsAfterCommit
 {
-    use InteractsWithQueue;
-
     public function handle(CohortScheduled $event): void
     {
         $cohort = $event->cohort->loadMissing('facilitators', 'programLevel.program');
-        $emails = $cohort->facilitators->pluck('email')->filter()->all();
-
-        if ($emails === []) {
-            return;
-        }
-
         $program = $cohort->programLevel->program->name;
         $level = $cohort->programLevel->name;
 
-        Mail::raw(
-            "You have been assigned to {$program} — {$level}, cohort {$cohort->name}, from {$cohort->start_date} to {$cohort->end_date}.",
-            fn ($message) => $message->to($emails)->subject('New Cohort Assignment'),
-        );
+        foreach ($cohort->facilitators as $facilitator) {
+            $facilitator->notify(new PortalNotification(
+                'cohort',
+                'New Cohort Assignment',
+                "You have been assigned to {$program} — {$level}, cohort {$cohort->name}, from {$cohort->start_date} to {$cohort->end_date}.",
+                '/timetable',
+                ['cohort_id' => $cohort->id],
+            ));
+        }
     }
 }

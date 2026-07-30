@@ -2,6 +2,7 @@
 
 namespace App\Modules\Communication\Listeners;
 
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Finance\Domain\Events\DiscountApproved;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,10 +14,18 @@ final class SendDiscountApprovalEmail implements ShouldQueueAfterCommit
 
     public function handle(DiscountApproved $event): void
     {
-        $discount = $event->discount->loadMissing('invoice.trainee');
+        $discount = $event->discount->loadMissing('invoice.trainee', 'requester');
         $trainee = $discount->invoice->trainee;
 
-        if (!$trainee->email) {
+        $discount->requester?->notify(new PortalNotification(
+            'finance',
+            'Invoice Discount Approved',
+            "A discount of TZS {$discount->amount} was approved for invoice {$discount->invoice->invoice_number}.",
+            '/finance',
+            ['invoice_id' => $discount->invoice_id, 'discount_id' => $discount->id],
+        ));
+
+        if (! $trainee->email) {
             return;
         }
 

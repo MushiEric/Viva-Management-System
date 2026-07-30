@@ -146,6 +146,29 @@ class TraineeManagementTest extends TestCase
             ->assertJsonPath('message', 'A trainee with an active enrollment cannot be deactivated.');
     }
 
+    public function test_deactivated_trainee_is_excluded_from_enrollment_options(): void
+    {
+        $active = Trainee::create([
+            'trainee_number' => 'VDC-2026-000002',
+            'full_name' => 'Active Trainee',
+            'date_of_birth' => '2001-01-01',
+            'gender' => 'male',
+            'phone' => '0784000001',
+            'address' => 'Dar es Salaam',
+        ]);
+        $this->trainee->delete();
+
+        $this->getJson('/api/v1/trainee-options')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $active->id)
+            ->assertJsonMissing(['id' => $this->trainee->id]);
+
+        $this->postJson('/api/v1/staff/enrollments', [
+            'trainee_id' => $this->trainee->id,
+            'cohort_id' => $this->source->id,
+        ])->assertJsonValidationErrors('trainee_id');
+    }
+
     public function test_transfer_moves_learning_and_finance_links_and_preserves_history(): void
     {
         $original = Enrollment::create([

@@ -3,14 +3,15 @@
 namespace Tests\Feature;
 
 use App\Mail\ContactInquiryConfirmation;
-use App\Mail\ContactInquiryStaffNotification;
 use App\Models\User;
 use App\Modules\Communication\Domain\Events\ContactInquirySubmitted;
 use App\Modules\Communication\Infrastructure\Models\ContactInquiry;
 use App\Modules\Communication\Listeners\SendContactInquiryEmails;
+use App\Modules\Communication\Notifications\PortalNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -96,6 +97,7 @@ class ContactInquiryTest extends TestCase
     public function test_submission_emails_staff_and_the_visitor(): void
     {
         Mail::fake();
+        Notification::fake();
         $manager = $this->staff('Manager', 'manager');
         $admin = $this->staff('Admin', 'admin');
         $inquiry = ContactInquiry::create([
@@ -106,9 +108,11 @@ class ContactInquiryTest extends TestCase
 
         (new SendContactInquiryEmails)->handle(new ContactInquirySubmitted($inquiry));
 
-        Mail::assertSent(ContactInquiryStaffNotification::class, function ($mail) use ($manager, $admin) {
-            return $mail->hasTo($manager->email) && $mail->hasTo($admin->email);
-        });
+        Notification::assertSentTo(
+            [$manager, $admin],
+            PortalNotification::class,
+            fn (PortalNotification $notification) => $notification->category === 'enquiry',
+        );
         Mail::assertSent(ContactInquiryConfirmation::class, function ($mail) use ($inquiry) {
             return $mail->hasTo($inquiry->email);
         });

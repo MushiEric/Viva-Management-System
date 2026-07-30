@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { KeyRound, Mail, ShieldCheck, UserRound } from 'lucide-react';
+import { BellRing, KeyRound, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function Profile() {
     const profileQuery = useQuery({ queryKey: ['profile'], queryFn: api.getProfile });
+    const notificationSettingsQuery = useQuery({ queryKey: ['notification-settings'], queryFn: api.getNotificationSettings });
+    const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
     const [passwords, setPasswords] = useState({
         current_password: '',
         password: '',
@@ -20,6 +22,16 @@ export default function Profile() {
         },
         onError: (error: Error) => toast.error(error.message),
     });
+    const updateNotificationSettings = useMutation({
+        mutationFn: api.updateNotificationSettings,
+        onSuccess: () => toast.success('Notification settings updated.'),
+        onError: (error: Error) => toast.error(error.message),
+    });
+
+    useEffect(() => {
+        const enabled = notificationSettingsQuery.data?.data?.email_notifications_enabled;
+        if (typeof enabled === 'boolean') setEmailNotificationsEnabled(enabled);
+    }, [notificationSettingsQuery.data]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -62,6 +74,33 @@ export default function Profile() {
                     </button>
                 </form>
             </div>
+
+            <section className="rounded-2xl border bg-white p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 font-display text-xl font-bold"><BellRing className="h-5 w-5 text-viva-blue" />Notification Settings</h2>
+                <p className="mt-1 text-sm text-slate-500">Choose whether portal notifications should also be delivered to your email.</p>
+                <div className="mt-5 space-y-3">
+                    <label className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                        <span><span className="block font-bold">Email notifications</span><span className="text-xs text-slate-500">Receive copies of your portal notifications by email.</span></span>
+                        <input
+                            type="checkbox"
+                            checked={emailNotificationsEnabled}
+                            onChange={(event) => setEmailNotificationsEnabled(event.target.checked)}
+                            className="h-5 w-5 accent-viva-blue"
+                        />
+                    </label>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border bg-slate-50 p-4">
+                        <span><span className="block font-bold">In-app notifications</span><span className="text-xs text-slate-500">Required for all staff accounts and cannot be disabled.</span></span>
+                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">Always enabled</span>
+                    </div>
+                </div>
+                <button
+                    disabled={updateNotificationSettings.isPending}
+                    onClick={() => updateNotificationSettings.mutate(emailNotificationsEnabled)}
+                    className="mt-5 rounded-xl bg-viva-blue px-5 py-3 font-bold text-white disabled:opacity-50"
+                >
+                    {updateNotificationSettings.isPending ? 'Saving...' : 'Save Notification Settings'}
+                </button>
+            </section>
         </div>
     );
 }
