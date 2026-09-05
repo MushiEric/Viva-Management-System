@@ -4,25 +4,30 @@ namespace App\Modules\Training\Application;
 
 use App\Models\User;
 use App\Modules\Audit\Application\AuditLogger;
-use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
 use App\Modules\Training\Domain\Events\ProgramApproved;
 use App\Modules\Training\Domain\Events\ProgramChangesRequested;
+use App\Modules\Training\Domain\Events\ProgramSubmittedForApproval;
 use App\Modules\Training\Infrastructure\Models\Program;
 use App\Shared\Application\EventBus;
-use Illuminate\Support\Facades\DB;
 use DomainException;
+use Illuminate\Support\Facades\DB;
 
 final readonly class ProgramWorkflow
 {
     public function __construct(
         private EventBus $events,
         private AuditLogger $audit,
-    ) {
-    }
+    ) {}
 
     public function submit(Program $program, User $actor): Program
     {
-        if (!$program->levels()->exists()) {
+        if (in_array($program->status, ['draft', 'changes_requested'], true) === false) {
+            throw new DomainException('Only draft programs or programs with requested changes can be submitted.');
+        }
+        if ($actor->role === 'facilitator' && $program->created_by !== $actor->id) {
+            throw new DomainException('Facilitators can only submit programs they created.');
+        }
+        if ($program->levels()->exists() === false) {
             throw new DomainException('Add at least one program level before submitting for approval.');
         }
 

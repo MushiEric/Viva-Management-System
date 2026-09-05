@@ -22,7 +22,9 @@ final class PortalNotification extends Notification
     {
         $channels = ['database'];
 
-        if ($notifiable->email_notifications_enabled && $notifiable->email) {
+        if (config('notifications.portal_email_enabled')
+            && $notifiable->email_notifications_enabled
+            && $notifiable->email) {
             $channels[] = 'mail';
         }
 

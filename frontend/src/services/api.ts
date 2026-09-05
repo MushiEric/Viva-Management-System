@@ -252,16 +252,38 @@ export const api = {
         return handleResponse(response);
     },
 
+    programImageUrl(programId: number): string {
+        return `${BASE_URL}/programs/${programId}/image`;
+    },
+
     async getProgramFacilitators(): Promise<ApiResponse> {
         const response = await fetch(`${BASE_URL}/program-facilitators`, { headers: getHeaders(true) });
         return handleResponse(response);
     },
 
-    async createProgram(payload: { name: string; description?: string }): Promise<ApiResponse> {
+    async createProgram(payload: FormData): Promise<ApiResponse> {
+        const token = localStorage.getItem('viva_auth_token');
         const response = await fetch(`${BASE_URL}/programs`, {
             method: 'POST',
-            headers: getHeaders(true),
-            body: JSON.stringify(payload),
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: payload,
+        });
+        return handleResponse(response);
+    },
+
+    async updateProgram(programId: number, payload: FormData): Promise<ApiResponse> {
+        const token = localStorage.getItem('viva_auth_token');
+        payload.set('_method', 'PUT');
+        const response = await fetch(`${BASE_URL}/programs/${programId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: payload,
         });
         return handleResponse(response);
     },
@@ -269,6 +291,15 @@ export const api = {
     async addProgramLevel(programId: number, payload: any): Promise<ApiResponse> {
         const response = await fetch(`${BASE_URL}/programs/${programId}/levels`, {
             method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    async updateProgramLevel(levelId: number, payload: any): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/program-levels/${levelId}`, {
+            method: 'PUT',
             headers: getHeaders(true),
             body: JSON.stringify(payload),
         });
@@ -722,4 +753,3 @@ export const api = {
         await handleResponse(response);
     }
 };
-

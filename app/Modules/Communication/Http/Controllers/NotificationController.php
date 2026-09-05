@@ -31,6 +31,7 @@ final class NotificationController extends Controller
             'success' => true,
             'data' => [
                 'email_notifications_enabled' => $request->user()->email_notifications_enabled,
+                'email_notifications_available' => (bool) config('notifications.portal_email_enabled'),
                 'in_app_notifications_enabled' => true,
             ],
         ]);
@@ -41,6 +42,9 @@ final class NotificationController extends Controller
         $validated = $request->validate([
             'email_notifications_enabled' => ['required', 'boolean'],
         ]);
+        if (! config('notifications.portal_email_enabled')) {
+            $validated['email_notifications_enabled'] = false;
+        }
         $request->user()->update($validated);
 
         return response()->json([
@@ -48,6 +52,7 @@ final class NotificationController extends Controller
             'message' => 'Notification settings updated.',
             'data' => [
                 'email_notifications_enabled' => $request->user()->email_notifications_enabled,
+                'email_notifications_available' => (bool) config('notifications.portal_email_enabled'),
                 'in_app_notifications_enabled' => true,
             ],
         ]);

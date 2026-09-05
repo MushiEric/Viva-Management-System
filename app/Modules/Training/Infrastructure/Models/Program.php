@@ -15,6 +15,7 @@ class Program extends Model
     protected $fillable = [
         'name',
         'description',
+        'image_path',
         'status',
         'created_by',
         'approved_by',

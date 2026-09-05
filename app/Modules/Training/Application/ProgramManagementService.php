@@ -10,23 +10,38 @@ use App\Modules\Training\Infrastructure\Models\ProgramLevel;
 use App\Shared\Application\EventBus;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 final readonly class ProgramManagementService
 {
     public function __construct(
         private AuditLogger $audit,
         private EventBus $events,
-    ) {
-    }
+    ) {}
 
     public function create(array $data, User $actor): Program
     {
-        $program = Program::create([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'status' => 'draft',
-            'created_by' => $actor->id,
-        ]);
+        $imagePath = isset($data['image'])
+            ? $data['image']->store('program-images', 'public')
+            : null;
+
+        try {
+            $program = Program::create([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'image_path' => $imagePath,
+                'status' => 'draft',
+                'created_by' => $actor->id,
+            ]);
+        } catch (Throwable $exception) {
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            throw $exception;
+        }
+
         $this->audit->record($actor, 'program.created', $program, null, $program->toArray());
 
         return $program;
@@ -34,17 +49,32 @@ final readonly class ProgramManagementService
 
     public function update(Program $program, array $data, User $actor): Program
     {
-        if ($program->status === 'approved') {
-            throw new DomainException('Approved programs cannot be edited until a new revision workflow is started.');
+        $this->assertEditable($program, $actor);
+
+        $oldImagePath = $program->image_path;
+        $newImagePath = isset($data['image'])
+            ? $data['image']->store('program-images', 'public')
+            : null;
+        $before = $program->toArray();
+
+        try {
+            $program->update([
+                'name' => $data['name'] ?? $program->name,
+                'description' => array_key_exists('description', $data) ? $data['description'] : $program->description,
+                'image_path' => $newImagePath ?? $program->image_path,
+            ]);
+        } catch (Throwable $exception) {
+            if ($newImagePath) {
+                Storage::disk('public')->delete($newImagePath);
+            }
+
+            throw $exception;
         }
 
-        $before = $program->toArray();
-        $program->update([
-            'name' => $data['name'] ?? $program->name,
-            'description' => array_key_exists('description', $data) ? $data['description'] : $program->description,
-            'status' => 'draft',
-            'review_notes' => null,
-        ]);
+        if ($newImagePath && $oldImagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+
         $this->audit->record($actor, 'program.updated', $program, $before, $program->fresh()->toArray());
 
         return $program;
@@ -52,11 +82,14 @@ final readonly class ProgramManagementService
 
     public function addLevel(Program $program, array $data, User $actor): ProgramLevel
     {
+        $this->assertEditable($program, $actor);
+
         return DB::transaction(function () use ($program, $data, $actor) {
             $level = $program->levels()->create([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'syllabus' => $data['syllabus'] ?? null,
+                'syllabus_outline' => $data['syllabus_outline'],
                 'duration_weeks' => $data['duration_weeks'] ?? 4,
                 'training_days_per_week' => $data['training_days_per_week'] ?? 6,
                 'fee_tzs' => $data['fee_tzs'],
@@ -73,6 +106,9 @@ final readonly class ProgramManagementService
 
     public function updateLevel(ProgramLevel $level, array $data, User $actor): ProgramLevel
     {
+        $level->loadMissing('program');
+        $this->assertEditable($level->program, $actor);
+
         return DB::transaction(function () use ($level, $data, $actor) {
             $before = $level->load('prerequisites', 'facilitators')->toArray();
             $feeChanged = array_key_exists('fee_tzs', $data)
@@ -82,6 +118,7 @@ final readonly class ProgramManagementService
                 'name' => $data['name'] ?? $level->name,
                 'description' => array_key_exists('description', $data) ? $data['description'] : $level->description,
                 'syllabus' => array_key_exists('syllabus', $data) ? $data['syllabus'] : $level->syllabus,
+                'syllabus_outline' => $data['syllabus_outline'],
                 'duration_weeks' => $data['duration_weeks'] ?? $level->duration_weeks,
                 'training_days_per_week' => $data['training_days_per_week'] ?? $level->training_days_per_week,
                 'fee_tzs' => $data['fee_tzs'] ?? $level->fee_tzs,
@@ -134,5 +171,16 @@ final readonly class ProgramManagementService
         $before = $program->toArray();
         $program->delete();
         $this->audit->record($actor, 'program.deactivated', $program, $before, $program->toArray());
+    }
+
+    private function assertEditable(Program $program, User $actor): void
+    {
+        if (! in_array($program->status, ['draft', 'changes_requested'], true)) {
+            throw new DomainException('Only draft programs or programs with requested changes can be edited.');
+        }
+
+        if ($actor->role === 'facilitator' && $program->created_by !== $actor->id) {
+            throw new DomainException('Facilitators can only edit programs they created.');
+        }
     }
 }

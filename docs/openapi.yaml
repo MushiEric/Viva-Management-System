@@ -271,7 +271,18 @@ paths:
       security: []
       responses:
         '200':
-          $ref: '#/components/responses/DataResponse'
+          description: Active cohort schedules and learning roadmaps
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimetableCohort'
   /contact-inquiries:
     get:
       tags: [Communications]
@@ -592,7 +603,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProgramRequest'
       responses:
@@ -611,7 +622,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProgramRequest'
       responses:
@@ -627,6 +638,26 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Success'
+  /programs/{program}/image:
+    get:
+      tags: [Programs]
+      summary: Display a program card image
+      operationId: getProgramImage
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProgramId'
+      responses:
+        '200':
+          description: Program card image
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+        '404':
+          $ref: '#/components/responses/NotFound'
   /programs/{program}/levels:
     post:
       tags: [Programs]
@@ -1564,13 +1595,106 @@ components:
       properties:
         name: { type: string }
         description: { type: [string, 'null'] }
+        image:
+          type: [string, 'null']
+          format: binary
+          description: Optional JPG, PNG, or WebP program card image, maximum 3 MB.
+    TimetableCohort:
+      type: object
+      required: [cohort_id, cohort_name, cohort, program, level, schedule_window, schedule_days, facilitators, capacity]
+      properties:
+        cohort_id: { type: integer }
+        cohort_name: { type: string }
+        cohort:
+          type: object
+          required: [id, name, display_name]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            display_name: { type: string, example: 'Python Programming · Aug · Beginner' }
+        program:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: [integer, 'null'] }
+            name: { type: [string, 'null'] }
+        level:
+          type: object
+          required: [id, name, description, syllabus_outline, fee_tzs]
+          properties:
+            id: { type: [integer, 'null'] }
+            name: { type: [string, 'null'] }
+            description: { type: [string, 'null'] }
+            syllabus_outline:
+              type: array
+              items:
+                type: object
+                required: [title]
+                properties:
+                  title: { type: string }
+                  submodules:
+                    type: array
+                    items:
+                      type: object
+                      required: [title]
+                      properties:
+                        title: { type: string }
+            fee_tzs: { type: [string, 'null'] }
+        schedule_window: { type: string }
+        start_date: { type: [string, 'null'], format: date }
+        end_date: { type: [string, 'null'], format: date }
+        schedule_days:
+          type: array
+          items:
+            type: object
+            required: [day_of_week, day_name, start_time, end_time]
+            properties:
+              day_of_week: { type: integer, minimum: 1, maximum: 6 }
+              day_name: { type: string }
+              start_time: { type: string }
+              end_time: { type: string }
+        facilitators:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+        capacity:
+          type: object
+          required: [max_seats, occupied_seats, available_seats, status]
+          properties:
+            max_seats: { type: integer }
+            occupied_seats: { type: integer }
+            available_seats: { type: integer }
+            status: { type: string, enum: [available, full] }
     ProgramLevelRequest:
       type: object
-      required: [name, fee_tzs]
+      required: [name, fee_tzs, syllabus_outline]
       properties:
         name: { type: string }
         description: { type: [string, 'null'] }
+        syllabus: { type: [string, 'null'], description: Optional additional syllabus notes }
+        syllabus_outline:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required: [title]
+            properties:
+              title: { type: string, maxLength: 255 }
+              submodules:
+                type: array
+                maxItems: 100
+                items:
+                  type: object
+                  required: [title]
+                  properties:
+                    title: { type: string, maxLength: 255 }
         duration_weeks: { type: [integer, 'null'] }
+        training_days_per_week: { type: [integer, 'null'], minimum: 1, maximum: 6 }
         fee_tzs: { type: number, minimum: 0 }
     CohortRequest:
       type: object

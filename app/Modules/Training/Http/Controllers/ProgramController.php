@@ -12,6 +12,8 @@ use App\Modules\Training\Infrastructure\Models\Program;
 use App\Modules\Training\Infrastructure\Models\ProgramLevel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class ProgramController extends Controller
 {
@@ -35,6 +37,16 @@ final class ProgramController extends Controller
             ->get(['id', 'name', 'email']);
 
         return response()->json(['success' => true, 'data' => $facilitators]);
+    }
+
+    public function image(Program $program): BinaryFileResponse
+    {
+        abort_unless(
+            $program->image_path && Storage::disk('public')->exists($program->image_path),
+            404,
+        );
+
+        return response()->file(Storage::disk('public')->path($program->image_path));
     }
 
     public function store(StoreProgramRequest $request, ProgramManagementService $service): JsonResponse

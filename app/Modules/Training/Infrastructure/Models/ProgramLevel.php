@@ -19,6 +19,7 @@ class ProgramLevel extends Model
         'name',
         'description',
         'syllabus',
+        'syllabus_outline',
         'duration_weeks',
         'training_days_per_week',
         'fee_tzs',
@@ -30,6 +31,7 @@ class ProgramLevel extends Model
     protected function casts(): array
     {
         return [
+            'syllabus_outline' => 'array',
             'fee_tzs' => 'decimal:2',
             'fee_approved_at' => 'datetime',
         ];

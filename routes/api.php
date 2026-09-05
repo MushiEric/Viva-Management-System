@@ -28,7 +28,7 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
     Route::post('/contact-inquiries', [ContactInquiryController::class, 'store']);
-
+    Route::get('/programs/{program}/image', [ProgramController::class, 'image']);
 
     // Sanctum protected API endpoints
     Route::middleware('auth:sanctum')->group(function () {

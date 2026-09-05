@@ -14,8 +14,11 @@ class CohortSchedulingTest extends TestCase
     use RefreshDatabase;
 
     private User $manager;
+
     private User $admin;
+
     private User $facilitator;
+
     private ProgramLevel $level;
 
     protected function setUp(): void
@@ -38,6 +41,15 @@ class CohortSchedulingTest extends TestCase
             'name' => 'Beginner',
             'duration_weeks' => 4,
             'training_days_per_week' => 6,
+            'syllabus_outline' => [
+                [
+                    'title' => 'Python Foundations',
+                    'submodules' => [
+                        ['title' => 'Variables'],
+                        ['title' => 'Collections'],
+                    ],
+                ],
+            ],
             'fee_tzs' => 250000,
             'fee_status' => 'approved',
             'fee_approved_by' => $this->manager->id,
@@ -99,6 +111,10 @@ class CohortSchedulingTest extends TestCase
 
         $this->getJson('/api/v1/timetable')
             ->assertOk()
+            ->assertJsonPath('data.0.cohort.display_name', 'Python Programming · Aug · Beginner')
+            ->assertJsonPath('data.0.program.name', 'Python Programming')
+            ->assertJsonPath('data.0.level.name', 'Beginner')
+            ->assertJsonPath('data.0.level.syllabus_outline.0.submodules.1.title', 'Collections')
             ->assertJsonPath('data.0.course.parent_course', 'Python Programming')
             ->assertJsonPath('data.0.course.fee_tzs', '250000.00')
             ->assertJsonPath('data.0.schedule_days.0.day_name', 'Monday')

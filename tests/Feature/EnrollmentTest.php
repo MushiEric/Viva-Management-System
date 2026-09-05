@@ -77,12 +77,18 @@ class EnrollmentTest extends TestCase
                 '*' => [
                     'cohort_id',
                     'cohort_name',
+                    'cohort' => ['id', 'name', 'display_name'],
+                    'program' => ['id', 'name'],
+                    'level' => ['id', 'name', 'description', 'syllabus_outline', 'fee_tzs'],
                     'schedule_window',
                     'course' => ['id', 'name', 'is_module', 'parent_course'],
                     'capacity' => ['max_seats', 'occupied_seats', 'available_seats', 'status'],
                 ],
             ],
         ]);
+        $response->assertJsonPath('data.0.cohort.display_name', 'Web Development')
+            ->assertJsonPath('data.0.program.name', 'Web Development')
+            ->assertJsonPath('data.0.level.name', null);
     }
 
     /**

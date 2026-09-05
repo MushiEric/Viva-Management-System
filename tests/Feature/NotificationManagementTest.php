@@ -13,34 +13,34 @@ class NotificationManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_staff_can_disable_email_but_in_app_remains_mandatory(): void
+    public function test_portal_email_is_disabled_system_wide_while_in_app_remains_mandatory(): void
     {
         $user = $this->staff();
         Sanctum::actingAs($user);
 
         $this->getJson('/api/v1/notification-settings')
             ->assertOk()
-            ->assertJsonPath('data.email_notifications_enabled', true)
+            ->assertJsonPath('data.email_notifications_enabled', false)
+            ->assertJsonPath('data.email_notifications_available', false)
             ->assertJsonPath('data.in_app_notifications_enabled', true);
 
         $this->putJson('/api/v1/notification-settings', [
-            'email_notifications_enabled' => false,
+            'email_notifications_enabled' => true,
         ])->assertOk()
             ->assertJsonPath('data.email_notifications_enabled', false)
+            ->assertJsonPath('data.email_notifications_available', false)
             ->assertJsonPath('data.in_app_notifications_enabled', true);
 
         $this->assertFalse($user->fresh()->email_notifications_enabled);
     }
 
-    public function test_notification_channels_respect_email_preference(): void
+    public function test_portal_notification_channels_remain_database_only_when_email_is_disabled(): void
     {
         Notification::fake();
         $user = $this->staff();
         $notification = new PortalNotification('program', 'Program Approved', 'Your program was approved.', '/programs');
 
-        $this->assertSame(['database', 'mail'], $notification->via($user));
-
-        $user->update(['email_notifications_enabled' => false]);
+        $user->update(['email_notifications_enabled' => true]);
         $this->assertSame(['database'], $notification->via($user->fresh()));
     }
 

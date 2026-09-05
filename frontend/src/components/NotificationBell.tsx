@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, BellRing, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +21,7 @@ export default function NotificationBell() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
+    const panelRef = useRef<HTMLDivElement>(null);
     const notificationsQuery = useQuery({
         queryKey: ['notifications'],
         queryFn: api.getNotifications,
@@ -43,6 +44,25 @@ export default function NotificationBell() {
     const notifications = (data?.notifications?.data || []) as PortalNotification[];
     const unreadCount = Number(data?.unread_count || 0);
 
+    useEffect(() => {
+        if (!open) return;
+
+        const closeOnOutsideClick = (event: PointerEvent) => {
+            if (!panelRef.current?.contains(event.target as Node)) setOpen(false);
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpen(false);
+        };
+
+        document.addEventListener('pointerdown', closeOnOutsideClick);
+        document.addEventListener('keydown', closeOnEscape);
+
+        return () => {
+            document.removeEventListener('pointerdown', closeOnOutsideClick);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [open]);
+
     const openNotification = (notification: PortalNotification) => {
         if (!notification.read_at) markRead.mutate(notification.id);
         setOpen(false);
@@ -50,7 +70,7 @@ export default function NotificationBell() {
     };
 
     return (
-        <div className="relative">
+        <div ref={panelRef} className="relative">
             <button
                 type="button"
                 aria-label={`${unreadCount} unread notifications`}
@@ -66,7 +86,7 @@ export default function NotificationBell() {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-2xl border bg-white shadow-2xl">
+                <div className="absolute right-0 z-50 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-2xl border bg-white shadow-2xl">
                     <div className="flex items-center justify-between border-b p-4">
                         <div><p className="font-display font-bold">Notifications</p><p className="text-xs text-slate-500">{unreadCount} unread</p></div>
                         {unreadCount > 0 && <button onClick={() => markAllRead.mutate()} className="flex items-center gap-1 text-xs font-bold text-viva-blue"><CheckCheck className="h-4 w-4" />Mark all read</button>}

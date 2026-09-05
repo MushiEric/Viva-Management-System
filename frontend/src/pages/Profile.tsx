@@ -8,7 +8,7 @@ import { api } from '../services/api';
 export default function Profile() {
     const profileQuery = useQuery({ queryKey: ['profile'], queryFn: api.getProfile });
     const notificationSettingsQuery = useQuery({ queryKey: ['notification-settings'], queryFn: api.getNotificationSettings });
-    const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+    const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(false);
     const [passwords, setPasswords] = useState({
         current_password: '',
         password: '',
@@ -39,6 +39,7 @@ export default function Profile() {
     };
 
     const user = profileQuery.data;
+    const emailNotificationsAvailable = notificationSettingsQuery.data?.data?.email_notifications_available === true;
 
     return (
         <div className="mx-auto max-w-4xl space-y-8">
@@ -77,15 +78,16 @@ export default function Profile() {
 
             <section className="rounded-2xl border bg-white p-6 shadow-sm">
                 <h2 className="flex items-center gap-2 font-display text-xl font-bold"><BellRing className="h-5 w-5 text-viva-blue" />Notification Settings</h2>
-                <p className="mt-1 text-sm text-slate-500">Choose whether portal notifications should also be delivered to your email.</p>
+                <p className="mt-1 text-sm text-slate-500">In-app alerts remain active. Portal email copies are currently disabled system-wide.</p>
                 <div className="mt-5 space-y-3">
                     <label className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                        <span><span className="block font-bold">Email notifications</span><span className="text-xs text-slate-500">Receive copies of your portal notifications by email.</span></span>
+                        <span><span className="block font-bold">Email notifications</span><span className="text-xs text-slate-500">{emailNotificationsAvailable ? 'Receive copies of your portal notifications by email.' : 'Temporarily disabled to reduce email usage.'}</span></span>
                         <input
                             type="checkbox"
                             checked={emailNotificationsEnabled}
+                            disabled={!emailNotificationsAvailable}
                             onChange={(event) => setEmailNotificationsEnabled(event.target.checked)}
-                            className="h-5 w-5 accent-viva-blue"
+                            className="h-5 w-5 accent-viva-blue disabled:opacity-40"
                         />
                     </label>
                     <div className="flex items-center justify-between gap-4 rounded-xl border bg-slate-50 p-4">
@@ -94,7 +96,7 @@ export default function Profile() {
                     </div>
                 </div>
                 <button
-                    disabled={updateNotificationSettings.isPending}
+                    disabled={!emailNotificationsAvailable || updateNotificationSettings.isPending}
                     onClick={() => updateNotificationSettings.mutate(emailNotificationsEnabled)}
                     className="mt-5 rounded-xl bg-viva-blue px-5 py-3 font-bold text-white disabled:opacity-50"
                 >
