@@ -7,8 +7,9 @@ echo "==> Starting Viva Digital Center application startup sequence..."
 LISTEN_PORT="${PORT:-80}"
 echo "==> Configuring Nginx to listen on port ${LISTEN_PORT}..."
 if [ -f /etc/nginx/http.d/default.conf ]; then
-    sed -i "s/listen [0-9]\+;/listen ${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
-    sed -i "s/listen \[::\]:[0-9]\+;/listen \[::\]:${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
+    sed -i -E "s/listen [0-9]+;/listen ${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
+    sed -i -E "s/listen \[::\]:[0-9]+;/listen \[::\]:${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
+    nginx -t
 fi
 
 # Support Railway's DATABASE_URL automatically
@@ -57,6 +58,10 @@ echo "==> Running Laravel Database Migrations..."
 php /var/www/html/artisan migrate --force --no-interaction || echo "Migration warning encountered, continuing..."
 
 echo "==> Optimizing Laravel application caches..."
+if [ -z "$APP_KEY" ]; then
+    echo "==> Warning: APP_KEY environment variable is missing. Generating key..."
+    export APP_KEY=$(php /var/www/html/artisan key:generate --show)
+fi
 php /var/www/html/artisan config:cache
 php /var/www/html/artisan route:cache
 php /var/www/html/artisan view:cache
