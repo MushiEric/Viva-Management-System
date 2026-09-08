@@ -8,7 +8,6 @@ LISTEN_PORT="${PORT:-80}"
 echo "==> Configuring Nginx to listen on port ${LISTEN_PORT}..."
 if [ -f /etc/nginx/http.d/default.conf ]; then
     sed -i -E "s/listen [0-9]+;/listen ${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
-    sed -i -E "s/listen \[::\]:[0-9]+;/listen \[::\]:${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
     nginx -t
 fi
 
