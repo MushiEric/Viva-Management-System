@@ -3,11 +3,13 @@ set -e
 
 echo "==> Starting Viva Digital Center application startup sequence..."
 
-# Configure Nginx dynamic port (Crucial for Railway / Fly.io / Cloud platforms)
-LISTEN_PORT="${PORT:-80}"
-echo "==> Configuring Nginx to listen on port ${LISTEN_PORT}..."
+# Configure Nginx to listen on both standard Port 80 AND dynamic $PORT (8080)
+LISTEN_PORT="${PORT:-8080}"
+echo "==> Configuring Nginx to listen on ports 80 and ${LISTEN_PORT}..."
 if [ -f /etc/nginx/http.d/default.conf ]; then
-    sed -i -E "s/listen [0-9]+;/listen ${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
+    if [ "$LISTEN_PORT" != "80" ]; then
+        sed -i -E "s/listen 80;/listen 80;\n    listen ${LISTEN_PORT};/g" /etc/nginx/http.d/default.conf
+    fi
     nginx -t
 fi
 
