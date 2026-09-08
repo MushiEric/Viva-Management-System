@@ -66,5 +66,10 @@ php /var/www/html/artisan config:cache
 php /var/www/html/artisan route:cache
 php /var/www/html/artisan view:cache
 
+echo "==> Setting final storage permissions for www-data..."
+touch /var/www/html/storage/logs/laravel.log
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 777 /var/www/html/storage/logs
+
 echo "==> Launching Supervisor (PHP-FPM + Nginx + Queue Worker)..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
