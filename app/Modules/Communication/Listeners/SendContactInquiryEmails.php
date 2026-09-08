@@ -22,16 +22,22 @@ final class SendContactInquiryEmails implements ShouldQueueAfterCommit
             ->where('status', 'approved')
             ->get();
 
-        foreach ($staff as $user) {
-            $user->notify(new PortalNotification(
-                'enquiry',
-                'New Website Enquiry',
-                "{$inquiry->name} submitted an enquiry about {$inquiry->program_of_interest}.",
-                '/enquiries',
-                ['inquiry_id' => $inquiry->id],
-            ));
-        }
+        try {
+            foreach ($staff as $user) {
+                $user->notify(new PortalNotification(
+                    'enquiry',
+                    'New Website Enquiry',
+                    "{$inquiry->name} submitted an enquiry about {$inquiry->program_of_interest}.",
+                    '/enquiries',
+                    ['inquiry_id' => $inquiry->id],
+                ));
+            }
 
-        Mail::to($inquiry->email)->send(new ContactInquiryConfirmation($inquiry));
+            if (!empty($inquiry->email) && filter_var($inquiry->email, FILTER_VALIDATE_EMAIL)) {
+                Mail::to($inquiry->email)->send(new ContactInquiryConfirmation($inquiry));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to dispatch contact inquiry email/notification: ' . $e->getMessage());
+        }
     }
 }
