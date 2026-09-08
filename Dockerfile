@@ -9,8 +9,8 @@ COPY frontend/ ./
 ENV VITE_API_URL=/api/v1
 RUN npm run build
 
-# Stage 2: Production PHP 8.3 FPM + Nginx Application Container
-FROM php:8.3-fpm-alpine
+# Stage 2: Production PHP 8.4 FPM + Nginx Application Container
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
