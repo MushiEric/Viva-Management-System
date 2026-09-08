@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: viva_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - APP_NAME=VivaDigitalCenter
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=http://localhost
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=viva_db
+      - DB_USERNAME=viva_user
+      - DB_PASSWORD=viva_secure_password
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=database
+      - SESSION_DRIVER=database
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - storage_data:/var/www/html/storage
+
+  db:
+    image: postgres:16-alpine
+    container_name: viva_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: viva_db
+      POSTGRES_USER: viva_user
+      POSTGRES_PASSWORD: viva_secure_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: viva_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  storage_data:
+  pgdata:
+  redis_data:
