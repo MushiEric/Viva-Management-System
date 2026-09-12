@@ -4,10 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-    Download,
     Eye,
     Filter,
-    Mail,
     Pencil,
     Phone,
     RefreshCw,
@@ -15,7 +13,6 @@ import {
     Trash2,
     UserPlus,
     UserRound,
-    Users,
     X,
 } from 'lucide-react';
 import { api } from '../services/api';
@@ -108,7 +105,7 @@ export default function Trainees() {
             setSelectedTraineeId(null);
             setRegistrationForm(null);
             refresh();
-            toast.success('Trainee profile updated.');
+            toast.success('Trainee profile updated successfully.');
         },
         onError: (error: Error) => toast.error(error.message),
     });
@@ -160,7 +157,7 @@ export default function Trainees() {
                 <div>
                     <h1 className="font-display text-3xl font-extrabold text-ink">Trainees Directory</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Manage registered students, view academic profiles, and manage enrollment records.
+                        View registered trainees, filter records, and inspect complete student profiles.
                     </p>
                 </div>
 
@@ -175,11 +172,11 @@ export default function Trainees() {
                     </button>
 
                     <Link
-                        to="/enroll"
+                        to="/trainees/new"
                         className="inline-flex items-center gap-2 rounded-xl bg-viva-blue px-4 py-2.5 font-display text-sm font-bold text-white shadow-md shadow-viva-blue/20 transition hover:bg-slate-900"
                     >
                         <UserPlus className="h-4 w-4" />
-                        <span>Enroll Student</span>
+                        <span>+ Register New Trainee</span>
                     </Link>
                 </div>
             </div>
@@ -191,7 +188,7 @@ export default function Trainees() {
                     <input
                         type="text"
                         className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 outline-none transition focus:border-viva-blue focus:bg-white focus:ring-1 focus:ring-viva-blue"
-                        placeholder="Search by name, trainee number, phone, or email..."
+                        placeholder="Search by full name, trainee number, phone..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -209,8 +206,9 @@ export default function Trainees() {
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                         <Filter className="h-4 w-4 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-500">Gender:</span>
+                        <label htmlFor="genderFilterSelect" className="text-xs font-bold text-slate-500">Gender:</label>
                         <select
+                            id="genderFilterSelect"
                             className="bg-transparent text-xs font-bold text-slate-800 outline-none"
                             value={genderFilter}
                             onChange={(e) => setGenderFilter(e.target.value)}
@@ -227,26 +225,22 @@ export default function Trainees() {
                 </div>
             </div>
 
-            {/* Data Table */}
+            {/* Streamlined Data Table (Full Name, Phone, Gender, Actions) */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                             <tr>
-                                <th className="px-6 py-4">Trainee / Number</th>
-                                <th className="px-6 py-4">Contact Info</th>
-                                <th className="px-6 py-4">Gender & DOB</th>
-                                <th className="px-6 py-4">Occupation & TIN</th>
-                                <th className="px-6 py-4">Emergency Contact</th>
-                                <th className="px-6 py-4">Courses</th>
-                                <th className="px-6 py-4">Form</th>
+                                <th className="px-6 py-4">Full Name</th>
+                                <th className="px-6 py-4">Phone Number</th>
+                                <th className="px-6 py-4">Gender</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredTrainees.map((trainee) => (
                                 <tr key={trainee.id} className="transition hover:bg-slate-50/80">
-                                    {/* Trainee Details */}
+                                    {/* Full Name & Trainee ID */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-viva-blue/10 text-viva-blue font-bold">
@@ -259,7 +253,7 @@ export default function Trainees() {
                                                 >
                                                     {trainee.full_name}
                                                 </Link>
-                                                <div className="mt-0.5 flex items-center gap-2">
+                                                <div className="mt-0.5">
                                                     <span className="font-mono text-xs font-bold text-slate-500">
                                                         {trainee.trainee_number}
                                                     </span>
@@ -268,96 +262,36 @@ export default function Trainees() {
                                         </div>
                                     </td>
 
-                                    {/* Contact Info */}
-                                    <td className="px-6 py-4">
-                                        <div className="space-y-1 text-xs">
-                                            {trainee.phone ? (
-                                                <a href={`tel:${trainee.phone}`} className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-viva-blue">
-                                                    <Phone className="h-3.5 w-3.5 text-slate-400" />
-                                                    <span>{trainee.phone}</span>
-                                                </a>
-                                            ) : (
-                                                <span className="text-slate-400">No phone</span>
-                                            )}
-                                            {trainee.email ? (
-                                                <a href={`mailto:${trainee.email}`} className="flex items-center gap-1.5 text-slate-500 hover:text-viva-blue truncate max-w-[180px]">
-                                                    <Mail className="h-3.5 w-3.5 text-slate-400" />
-                                                    <span className="truncate">{trainee.email}</span>
-                                                </a>
-                                            ) : (
-                                                <span className="block text-[11px] text-slate-400">No email</span>
-                                            )}
-                                        </div>
-                                    </td>
-
-                                    {/* Gender & DOB */}
-                                    <td className="px-6 py-4">
-                                        <div className="space-y-1">
-                                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${trainee.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                {trainee.gender}
-                                            </span>
-                                            <p className="text-xs text-slate-500">{trainee.date_of_birth}</p>
-                                        </div>
-                                    </td>
-
-                                    {/* Occupation & TIN */}
-                                    <td className="px-6 py-4 text-xs">
-                                        <p className="font-semibold text-slate-800">{trainee.occupation || 'N/A'}</p>
-                                        {trainee.tin && (
-                                            <p className="mt-0.5 font-mono text-[11px] text-slate-500">TIN: {trainee.tin}</p>
-                                        )}
-                                    </td>
-
-                                    {/* Emergency Contact */}
-                                    <td className="px-6 py-4 text-xs">
-                                        {trainee.emergency_contact ? (
-                                            <div>
-                                                <p className="font-bold text-slate-800">{trainee.emergency_contact.full_name}</p>
-                                                <p className="text-[11px] text-slate-500">
-                                                    {trainee.emergency_contact.relationship} · {trainee.emergency_contact.phone}
-                                                </p>
-                                            </div>
+                                    {/* Phone Number */}
+                                    <td className="px-6 py-4 text-xs font-semibold text-slate-700">
+                                        {trainee.phone ? (
+                                            <a href={`tel:${trainee.phone}`} className="inline-flex items-center gap-1.5 hover:text-viva-blue">
+                                                <Phone className="h-3.5 w-3.5 text-slate-400" />
+                                                <span>{trainee.phone}</span>
+                                            </a>
                                         ) : (
-                                            <span className="text-slate-400">Not recorded</span>
+                                            <span className="text-slate-400">Not provided</span>
                                         )}
                                     </td>
 
-                                    {/* Enrollments Count */}
+                                    {/* Gender */}
                                     <td className="px-6 py-4">
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-                                            <Users className="h-3.5 w-3.5 text-viva-blue" />
-                                            <span>{trainee.enrollments_count} Course{trainee.enrollments_count === 1 ? '' : 's'}</span>
+                                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide ${trainee.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {trainee.gender}
                                         </span>
-                                    </td>
-
-                                    {/* Registration Form Download */}
-                                    <td className="px-6 py-4">
-                                        {trainee.registration_form_path ? (
-                                            <button
-                                                type="button"
-                                                title="Download Scanned Form PDF"
-                                                onClick={() => api.downloadTraineeRegistrationForm(trainee.id, trainee.trainee_number)}
-                                                className="inline-flex items-center gap-1 rounded-lg border border-viva-blue/30 bg-blue-50 px-2.5 py-1 text-xs font-bold text-viva-blue transition hover:bg-viva-blue hover:text-white"
-                                            >
-                                                <Download className="h-3.5 w-3.5" />
-                                                <span>PDF</span>
-                                            </button>
-                                        ) : (
-                                            <span className="text-[11px] text-slate-400">None</span>
-                                        )}
                                     </td>
 
                                     {/* Actions */}
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-1.5">
+                                        <div className="flex items-center justify-end gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => navigate(`/trainees/${trainee.id}`)}
-                                                className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-viva-blue hover:text-white"
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-viva-blue px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900"
                                                 title="View Full Profile"
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
-                                                <span>Profile</span>
+                                                <span>View Profile</span>
                                             </button>
 
                                             {canManage && (
@@ -395,10 +329,9 @@ export default function Trainees() {
 
                             {!filteredTrainees.length && (
                                 <tr>
-                                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                                    <td colSpan={4} className="py-12 text-center text-slate-400">
                                         <UserRound className="mx-auto mb-2 h-8 w-8 text-slate-300" />
-                                        <p className="font-semibold text-slate-600">No trainee records match your filters.</p>
-                                        <p className="mt-1 text-xs">Try clearing your search query or gender filter.</p>
+                                        <p className="font-semibold text-slate-600">No trainee records match your search or filter.</p>
                                     </td>
                                 </tr>
                             )}
@@ -424,28 +357,39 @@ export default function Trainees() {
 
                         <form onSubmit={handleFormSubmit} className="mt-6 space-y-4">
                             <div className="grid gap-3 md:grid-cols-2">
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Full Name
+                                <div>
+                                    <label htmlFor="edit_full_name" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Full Name <span className="text-red-500">*</span>
+                                    </label>
                                     <input
+                                        id="edit_full_name"
                                         required
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.full_name}
                                         onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Date of Birth
+                                </div>
+
+                                <div>
+                                    <label htmlFor="edit_date_of_birth" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Date of Birth <span className="text-red-500">*</span>
+                                    </label>
                                     <input
+                                        id="edit_date_of_birth"
                                         required
                                         type="date"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.date_of_birth}
                                         onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Gender
+                                </div>
+
+                                <div>
+                                    <label htmlFor="edit_gender" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Gender <span className="text-red-500">*</span>
+                                    </label>
                                     <select
+                                        id="edit_gender"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.gender}
                                         onChange={(e) => setForm({ ...form, gender: e.target.value })}
@@ -453,89 +397,137 @@ export default function Trainees() {
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
                                     </select>
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Phone Number
+                                </div>
+
+                                <div>
+                                    <label htmlFor="edit_phone" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Phone Number <span className="text-red-500">*</span>
+                                    </label>
                                     <input
+                                        id="edit_phone"
                                         required
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.phone}
                                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Email Address
+                                </div>
+
+                                <div>
+                                    <label htmlFor="edit_email" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Email Address
+                                    </label>
                                     <input
+                                        id="edit_email"
                                         type="email"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.email}
                                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500">
-                                    Customer TIN
+                                </div>
+
+                                <div>
+                                    <label htmlFor="edit_tin" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Customer TIN
+                                    </label>
                                     <input
+                                        id="edit_tin"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.tin}
                                         onChange={(e) => setForm({ ...form, tin: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500 md:col-span-2">
-                                    Occupation
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit_occupation" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Occupation
+                                    </label>
                                     <input
+                                        id="edit_occupation"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.occupation}
                                         onChange={(e) => setForm({ ...form, occupation: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500 md:col-span-2">
-                                    Physical Address
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit_address" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Physical Address <span className="text-red-500">*</span>
+                                    </label>
                                     <textarea
+                                        id="edit_address"
                                         required
                                         rows={2}
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.address}
                                         onChange={(e) => setForm({ ...form, address: e.target.value })}
                                     />
-                                </label>
-                                <label className="text-xs font-bold uppercase text-slate-500 md:col-span-2">
-                                    Replace Registration Form (PDF, Max 5MB)
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label htmlFor="edit_registration_form" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Replace Scanned Registration Form (PDF, Max 5MB)
+                                    </label>
                                     <input
+                                        id="edit_registration_form"
                                         type="file"
                                         accept="application/pdf"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-xs"
                                         onChange={(e) => setRegistrationForm(e.target.files?.[0] || null)}
                                     />
-                                </label>
+                                </div>
                             </div>
 
                             <div className="rounded-xl bg-slate-50 p-4">
                                 <p className="mb-3 text-xs font-bold uppercase text-slate-500">Emergency Contact</p>
                                 <div className="grid gap-3 md:grid-cols-2">
-                                    <input
-                                        className="rounded-xl border border-slate-200 p-3 text-sm"
-                                        placeholder="Emergency contact name"
-                                        value={form.emergency_name}
-                                        onChange={(e) => setForm({ ...form, emergency_name: e.target.value })}
-                                    />
-                                    <input
-                                        className="rounded-xl border border-slate-200 p-3 text-sm"
-                                        placeholder="Relationship"
-                                        value={form.emergency_relationship}
-                                        onChange={(e) => setForm({ ...form, emergency_relationship: e.target.value })}
-                                    />
-                                    <input
-                                        className="rounded-xl border border-slate-200 p-3 text-sm"
-                                        placeholder="Emergency phone"
-                                        value={form.emergency_phone}
-                                        onChange={(e) => setForm({ ...form, emergency_phone: e.target.value })}
-                                    />
-                                    <input
-                                        className="rounded-xl border border-slate-200 p-3 text-sm"
-                                        placeholder="Alternate phone"
-                                        value={form.emergency_alternate_phone}
-                                        onChange={(e) => setForm({ ...form, emergency_alternate_phone: e.target.value })}
-                                    />
+                                    <div>
+                                        <label htmlFor="edit_emergency_name" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                            Contact Full Name
+                                        </label>
+                                        <input
+                                            id="edit_emergency_name"
+                                            className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm"
+                                            placeholder="Emergency contact name"
+                                            value={form.emergency_name}
+                                            onChange={(e) => setForm({ ...form, emergency_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="edit_emergency_relationship" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                            Relationship
+                                        </label>
+                                        <input
+                                            id="edit_emergency_relationship"
+                                            className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm"
+                                            placeholder="Relationship"
+                                            value={form.emergency_relationship}
+                                            onChange={(e) => setForm({ ...form, emergency_relationship: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="edit_emergency_phone" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                            Emergency Phone
+                                        </label>
+                                        <input
+                                            id="edit_emergency_phone"
+                                            className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm"
+                                            placeholder="Emergency phone"
+                                            value={form.emergency_phone}
+                                            onChange={(e) => setForm({ ...form, emergency_phone: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="edit_emergency_alternate_phone" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                            Alternate Phone
+                                        </label>
+                                        <input
+                                            id="edit_emergency_alternate_phone"
+                                            className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm"
+                                            placeholder="Alternate phone"
+                                            value={form.emergency_alternate_phone}
+                                            onChange={(e) => setForm({ ...form, emergency_alternate_phone: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
