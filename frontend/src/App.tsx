@@ -11,6 +11,7 @@ import Staff from './pages/Staff';
 import Programs from './pages/Programs';
 import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
+import TraineeProfile from './pages/TraineeProfile';
 import Learning from './pages/Learning';
 import Finance from './pages/Finance';
 import Resources from './pages/Resources';
@@ -187,6 +188,7 @@ function NavigationLayout() {
                         <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
                         <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
                         <Route path="/trainees" element={<ProtectedRoute><Trainees /></ProtectedRoute>} />
+                        <Route path="/trainees/:id" element={<ProtectedRoute><TraineeProfile /></ProtectedRoute>} />
                         <Route path="/cohorts" element={<ProtectedRoute><Cohorts /></ProtectedRoute>} />
                         <Route path="/programs" element={<ProtectedRoute><Programs /></ProtectedRoute>} />
                         <Route path="*" element={<Navigate to="/timetable" replace />} />
