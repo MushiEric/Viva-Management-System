@@ -1,8 +1,20 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { CheckCircle2, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
+import {
+    CheckCircle2,
+    Eye,
+    Filter,
+    Phone,
+    RefreshCw,
+    Search,
+    Trash2,
+    UserPlus,
+    UserRound,
+    X,
+} from 'lucide-react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { confirmToast } from '../components/ConfirmToast';
@@ -23,41 +35,42 @@ interface StaffMember {
     permission_overrides: PermissionOverride[];
 }
 
+const blankForm = {
+    name: '',
+    email: '',
+    phone: '',
+    role: 'facilitator',
+    password: '',
+    password_confirmation: '',
+};
+
 export default function Staff() {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const currentUser = useAuthStore((state) => state.user);
     const isManager = currentUser?.role === 'manager';
-    const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
-    const [overrides, setOverrides] = useState<Record<string, boolean>>({});
-    const [form, setForm] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        role: 'facilitator',
-        password: '',
-        password_confirmation: '',
-    });
+
+    const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState<string>('all');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [form, setForm] = useState(blankForm);
 
     const staffQuery = useQuery({ queryKey: ['staff'], queryFn: api.getStaff });
-    const permissionsQuery = useQuery({
-        queryKey: ['staff-permissions'],
-        queryFn: api.getStaffPermissions,
-        enabled: isManager,
-    });
 
     const refresh = () => queryClient.invalidateQueries({ queryKey: ['staff'] });
 
-    const createStaff = useMutation({
+    const createStaffMutation = useMutation({
         mutationFn: api.createStaff,
         onSuccess: () => {
             refresh();
-            setForm({ name: '', email: '', phone: '', role: 'facilitator', password: '', password_confirmation: '' });
+            setIsCreateModalOpen(false);
+            setForm(blankForm);
             toast.success('Staff account created and awaiting Manager approval.');
         },
         onError: (error: Error) => toast.error(error.message),
     });
 
-    const approveStaff = useMutation({
+    const approveStaffMutation = useMutation({
         mutationFn: api.approveStaff,
         onSuccess: () => {
             refresh();
@@ -66,7 +79,7 @@ export default function Staff() {
         onError: (error: Error) => toast.error(error.message),
     });
 
-    const deactivateStaff = useMutation({
+    const deactivateStaffMutation = useMutation({
         mutationFn: api.deactivateStaff,
         onSuccess: () => {
             refresh();
@@ -75,105 +88,354 @@ export default function Staff() {
         onError: (error: Error) => toast.error(error.message),
     });
 
-    const savePermissions = useMutation({
-        mutationFn: () => api.updateStaffPermissions(selectedStaff!.id, overrides),
-        onSuccess: () => {
-            refresh();
-            toast.success('Permission overrides updated.');
-        },
-        onError: (error: Error) => toast.error(error.message),
-    });
-
-    const submit = (event: FormEvent) => {
+    const handleSubmitCreate = (event: FormEvent) => {
         event.preventDefault();
-        createStaff.mutate(form);
-    };
-
-    const openPermissions = (staff: StaffMember) => {
-        setSelectedStaff(staff);
-        setOverrides(Object.fromEntries(staff.permission_overrides.map((item) => [item.permission, item.allowed])));
+        createStaffMutation.mutate(form);
     };
 
     const staff = (staffQuery.data?.data?.data || []) as StaffMember[];
-    const permissions = (permissionsQuery.data?.data?.permissions || []) as string[];
+    const filteredStaff = staff.filter((member) => {
+        if (roleFilter !== 'all' && member.role !== roleFilter) return false;
+        if (search) {
+            const query = search.toLowerCase();
+            return (
+                member.name.toLowerCase().includes(query) ||
+                member.email.toLowerCase().includes(query) ||
+                (member.phone && member.phone.includes(query))
+            );
+        }
+        return true;
+    });
 
     return (
-        <div className="space-y-8">
-            <header>
-                <h1 className="font-display text-3xl font-extrabold text-ink">Staff Management</h1>
-                <p className="mt-1 text-sm text-slate-500">Create staff accounts, approve access, and manage permission exceptions.</p>
-            </header>
+        <div className="space-y-6">
+            {/* Header section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="font-display text-3xl font-extrabold text-ink">Staff Directory</h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Manage system staff accounts, approve pending users, and configure access permissions.
+                    </p>
+                </div>
 
-            <div className="grid gap-8 xl:grid-cols-[360px_1fr]">
-                <form onSubmit={submit} className="h-fit space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <UserPlus className="h-5 w-5 text-viva-blue" />
-                        <h2 className="font-display text-lg font-bold">Create Staff Account</h2>
-                    </div>
-                    <input required className="w-full rounded-xl border p-3" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-                    <input required type="email" className="w-full rounded-xl border p-3" placeholder="Email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-                    <input className="w-full rounded-xl border p-3" placeholder="Phone (optional)" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-                    <select className="w-full rounded-xl border p-3" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
-                        <option value="facilitator">Facilitator</option>
-                        <option value="admin">Admin</option>
-                        <option value="manager">Manager</option>
-                    </select>
-                    <input required minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" type="password" className="w-full rounded-xl border p-3" placeholder="Temporary password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-                    <input required minLength={8} type="password" className="w-full rounded-xl border p-3" placeholder="Confirm password" value={form.password_confirmation} onChange={(event) => setForm({ ...form, password_confirmation: event.target.value })} />
-                    <p className="text-xs text-slate-500">Use 8+ characters with uppercase, lowercase, number, and symbol.</p>
-                    <button disabled={createStaff.isPending} className="w-full rounded-xl bg-viva-blue p-3 font-bold text-white disabled:opacity-50">
-                        {createStaff.isPending ? 'Creating...' : 'Create Pending Account'}
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={refresh}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${staffQuery.isFetching ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
                     </button>
-                </form>
 
-                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 p-5">
-                        <h2 className="font-display text-lg font-bold">Staff Accounts</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                                <tr><th className="p-4">Staff</th><th className="p-4">Role</th><th className="p-4">Status</th><th className="p-4 text-right">Actions</th></tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {staff.map((member) => (
-                                    <tr key={member.id} className={member.deleted_at ? 'opacity-50' : ''}>
-                                        <td className="p-4"><p className="font-bold text-ink">{member.name}</p><p className="text-xs text-slate-400">{member.email}</p></td>
-                                        <td className="p-4 capitalize">{member.role}</td>
-                                        <td className="p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${member.status === 'approved' ? 'bg-green-50 text-green-700' : member.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{member.status}</span></td>
-                                        <td className="p-4">
-                                            <div className="flex justify-end gap-2">
-                                                {isManager && member.status === 'pending' && !member.deleted_at && <button title="Approve" onClick={() => approveStaff.mutate(member.id)} className="rounded-lg border p-2 text-green-600 hover:bg-green-50"><CheckCircle2 className="h-4 w-4" /></button>}
-                                                {isManager && !member.deleted_at && <button title="Permissions" onClick={() => openPermissions(member)} className="rounded-lg border p-2 text-viva-blue hover:bg-blue-50"><ShieldCheck className="h-4 w-4" /></button>}
-                                                {!member.deleted_at && member.id !== currentUser?.id && <button title="Deactivate" onClick={() => confirmToast({ title: `Deactivate ${member.name}?`, message: 'The staff member will lose portal access and their active tokens will be revoked.', confirmLabel: 'Deactivate Staff', onConfirm: () => deactivateStaff.mutate(member.id) })} className="rounded-lg border p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                    <button
+                        type="button"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-viva-blue px-4 py-2.5 font-display text-sm font-bold text-white shadow-md shadow-viva-blue/20 transition hover:bg-slate-900"
+                    >
+                        <UserPlus className="h-4 w-4" />
+                        <span>+ Create Staff Member</span>
+                    </button>
+                </div>
             </div>
 
-            {isManager && selectedStaff && (
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="font-display text-lg font-bold">Permission Overrides — {selectedStaff.name}</h2>
-                    <p className="mt-1 text-xs text-slate-500">Unchecked permissions use the predefined defaults for the staff role.</p>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {permissions.map((permission) => (
-                            <div key={permission} className="rounded-xl border p-3">
-                                <p className="mb-2 text-xs font-bold">{permission}</p>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setOverrides({ ...overrides, [permission]: true })} className={`rounded-lg px-3 py-1 text-xs ${overrides[permission] === true ? 'bg-green-600 text-white' : 'bg-slate-100'}`}>Allow</button>
-                                    <button onClick={() => setOverrides({ ...overrides, [permission]: false })} className={`rounded-lg px-3 py-1 text-xs ${overrides[permission] === false ? 'bg-red-600 text-white' : 'bg-slate-100'}`}>Deny</button>
-                                    <button onClick={() => { const next = { ...overrides }; delete next[permission]; setOverrides(next); }} className="rounded-lg bg-slate-100 px-3 py-1 text-xs">Default</button>
-                                </div>
-                            </div>
-                        ))}
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                        type="text"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 outline-none transition focus:border-viva-blue focus:bg-white focus:ring-1 focus:ring-viva-blue"
+                        placeholder="Search by full name, email, or phone number..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    {search && (
+                        <button
+                            type="button"
+                            onClick={() => setSearch('')}
+                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <Filter className="h-4 w-4 text-slate-400" />
+                        <label htmlFor="roleFilterSelect" className="text-xs font-bold text-slate-500">Role:</label>
+                        <select
+                            id="roleFilterSelect"
+                            className="bg-transparent text-xs font-bold text-slate-800 outline-none"
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="facilitator">Facilitator</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                        </select>
                     </div>
-                    <button onClick={() => savePermissions.mutate()} disabled={savePermissions.isPending} className="mt-5 rounded-xl bg-viva-blue px-5 py-3 font-bold text-white disabled:opacity-50">Save Overrides</button>
-                </section>
+
+                    <span className="text-xs font-bold text-slate-400">
+                        {filteredStaff.length} Record{filteredStaff.length === 1 ? '' : 's'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Full-Width Data Table */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            <tr>
+                                <th className="px-6 py-4">Staff Member</th>
+                                <th className="px-6 py-4">Phone Number</th>
+                                <th className="px-6 py-4">Role</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredStaff.map((member) => (
+                                <tr key={member.id} className={`transition hover:bg-slate-50/80 ${member.deleted_at ? 'opacity-50' : ''}`}>
+                                    {/* Staff Name & Email */}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-viva-blue/10 text-viva-blue font-bold">
+                                                <UserRound className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigate(`/staff/${member.id}`)}
+                                                    className="font-display font-bold text-slate-900 hover:text-viva-blue hover:underline text-left"
+                                                >
+                                                    {member.name}
+                                                </button>
+                                                <p className="text-xs text-slate-500">{member.email}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {/* Phone Number */}
+                                    <td className="px-6 py-4 text-xs font-semibold text-slate-700">
+                                        {member.phone ? (
+                                            <a href={`tel:${member.phone}`} className="inline-flex items-center gap-1.5 hover:text-viva-blue">
+                                                <Phone className="h-3.5 w-3.5 text-slate-400" />
+                                                <span>{member.phone}</span>
+                                            </a>
+                                        ) : (
+                                            <span className="text-slate-400">Not provided</span>
+                                        )}
+                                    </td>
+
+                                    {/* Role */}
+                                    <td className="px-6 py-4">
+                                        <span className="inline-block rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold uppercase text-viva-blue">
+                                            {member.role}
+                                        </span>
+                                    </td>
+
+                                    {/* Status */}
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-extrabold capitalize ${member.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : member.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+                                            {member.status}
+                                        </span>
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/staff/${member.id}`)}
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-viva-blue px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900"
+                                                title="View Staff Details"
+                                            >
+                                                <Eye className="h-3.5 w-3.5" />
+                                                <span>View Details</span>
+                                            </button>
+
+                                            {isManager && member.status === 'pending' && !member.deleted_at && (
+                                                <button
+                                                    type="button"
+                                                    title="Approve Staff Account"
+                                                    onClick={() => approveStaffMutation.mutate(member.id)}
+                                                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                                                >
+                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    <span>Approve</span>
+                                                </button>
+                                            )}
+
+                                            {!member.deleted_at && member.id !== currentUser?.id && (
+                                                <button
+                                                    type="button"
+                                                    title="Deactivate Staff Account"
+                                                    onClick={() =>
+                                                        confirmToast({
+                                                            title: `Deactivate ${member.name}?`,
+                                                            message: 'The staff member will lose portal access and their active tokens will be revoked.',
+                                                            confirmLabel: 'Deactivate Staff',
+                                                            onConfirm: () => deactivateStaffMutation.mutate(member.id),
+                                                        })
+                                                    }
+                                                    className="rounded-xl border border-slate-200 p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {!filteredStaff.length && (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                                        <UserRound className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+                                        <p className="font-semibold text-slate-600">No staff accounts match your search or filter.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Create Staff Account Modal */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+                    <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="flex items-center justify-between border-b pb-4">
+                            <div className="flex items-center gap-2">
+                                <UserPlus className="h-5 w-5 text-viva-blue" />
+                                <h2 className="font-display text-xl font-bold text-ink">Create Staff Account</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitCreate} className="mt-6 space-y-4">
+                            <div>
+                                <label htmlFor="create_staff_name" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Full Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="create_staff_name"
+                                    required
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    placeholder="Enter full name"
+                                    value={form.name}
+                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="create_staff_email" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Email Address <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="create_staff_email"
+                                    required
+                                    type="email"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    placeholder="staff@vivadigitalcenter.com"
+                                    value={form.email}
+                                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="create_staff_phone" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Phone Number <span className="font-normal text-slate-400">(Optional)</span>
+                                </label>
+                                <input
+                                    id="create_staff_phone"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    placeholder="+255 7XX XXX XXX"
+                                    value={form.phone}
+                                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="create_staff_role" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    System Role <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="create_staff_role"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    value={form.role}
+                                    onChange={(e) => setForm({ ...form, role: e.target.value as 'manager' | 'admin' | 'facilitator' })}
+                                >
+                                    <option value="facilitator">Facilitator</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label htmlFor="create_staff_password" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Temporary Password <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="create_staff_password"
+                                    required
+                                    minLength={8}
+                                    pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}"
+                                    type="password"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    placeholder="Enter initial password"
+                                    value={form.password}
+                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                />
+                                <p className="mt-1 text-[11px] text-slate-500">
+                                    Must be 8+ characters with uppercase, lowercase, number, and symbol.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label htmlFor="create_staff_password_confirmation" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Confirm Password <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="create_staff_password_confirmation"
+                                    required
+                                    minLength={8}
+                                    type="password"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800 outline-none focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
+                                    placeholder="Re-enter password"
+                                    value={form.password_confirmation}
+                                    onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="rounded-xl border border-slate-200 px-5 py-2.5 font-bold text-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    disabled={createStaffMutation.isPending}
+                                    className="rounded-xl bg-viva-blue px-6 py-2.5 font-bold text-white shadow-md shadow-viva-blue/20 disabled:opacity-50"
+                                >
+                                    {createStaffMutation.isPending ? 'Creating Account...' : 'Create Staff Account'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

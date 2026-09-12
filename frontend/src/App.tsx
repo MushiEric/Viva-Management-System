@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Timetable from './pages/Timetable';
 import Enroll from './pages/Enroll';
 import Staff from './pages/Staff';
+import StaffDetails from './pages/StaffDetails';
 import Programs from './pages/Programs';
 import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
@@ -181,6 +182,7 @@ function NavigationLayout() {
                         <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                         <Route path="/enroll" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
                         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+                        <Route path="/staff/:id" element={<ProtectedRoute><StaffDetails /></ProtectedRoute>} />
                         <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
                         <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
                         <Route path="/enquiries" element={<ProtectedRoute><Enquiries /></ProtectedRoute>} />
