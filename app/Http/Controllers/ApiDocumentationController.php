@@ -64,7 +64,7 @@ final class ApiDocumentationController extends Controller
     {
         $method = explode('|', $route->methods()[0])[0];
         $path = preg_replace('/\{([^}]+)\}/', ':$1', substr($route->uri(), 7));
-        $public = in_array($route->uri(), ['api/v1/token', 'api/v1/timetable', 'api/v1/contact-inquiries'], true)
+        $public = in_array($route->uri(), ['api/v1/token', 'api/v1/timetable', 'api/v1/contact-inquiries', 'api/v1/trainee-registrations'], true)
             && ! in_array('GET', $route->methods(), true);
         $request = [
             'method' => $method,

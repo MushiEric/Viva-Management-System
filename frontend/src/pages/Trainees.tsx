@@ -31,6 +31,7 @@ interface TraineeSummary {
     address: string | null;
     occupation: string | null;
     registration_form_path: string | null;
+    registration_source: 'staff' | 'self';
     enrollments_count: number;
     emergency_contact: EmergencyContact | null;
 }
@@ -65,14 +66,15 @@ export default function Trainees() {
 
     const [search, setSearch] = useState('');
     const [genderFilter, setGenderFilter] = useState<string>('all');
+    const [sourceFilter, setSourceFilter] = useState<string>('all');
     const [selectedTraineeId, setSelectedTraineeId] = useState<number | null>(null);
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState(blankForm);
     const [registrationForm, setRegistrationForm] = useState<File | null>(null);
 
     const traineesQuery = useQuery({
-        queryKey: ['trainees', search, genderFilter],
-        queryFn: () => api.getTrainees(search),
+        queryKey: ['trainees', search, sourceFilter],
+        queryFn: () => api.getTrainees(search, sourceFilter === 'all' ? '' : sourceFilter),
     });
 
     const refresh = () => {
@@ -219,6 +221,20 @@ export default function Trainees() {
                         </select>
                     </div>
 
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <label htmlFor="sourceFilterSelect" className="text-xs font-bold text-slate-500">Source:</label>
+                        <select
+                            id="sourceFilterSelect"
+                            className="bg-transparent text-xs font-bold text-slate-800 outline-none"
+                            value={sourceFilter}
+                            onChange={(e) => setSourceFilter(e.target.value)}
+                        >
+                            <option value="all">All Sources</option>
+                            <option value="self">Self-registered</option>
+                            <option value="staff">Registered by staff</option>
+                        </select>
+                    </div>
+
                     <span className="text-xs font-bold text-slate-400">
                         {filteredTrainees.length} Record{filteredTrainees.length === 1 ? '' : 's'}
                     </span>
@@ -253,10 +269,15 @@ export default function Trainees() {
                                                 >
                                                     {trainee.full_name}
                                                 </Link>
-                                                <div className="mt-0.5">
+                                                <div className="mt-0.5 flex flex-wrap items-center gap-2">
                                                     <span className="font-mono text-xs font-bold text-slate-500">
                                                         {trainee.trainee_number}
                                                     </span>
+                                                    {trainee.registration_source === 'self' && (
+                                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
+                                                            Self-registered
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

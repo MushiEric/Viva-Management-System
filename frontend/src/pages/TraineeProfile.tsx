@@ -26,6 +26,7 @@ import { confirmToast } from '../components/ConfirmToast';
 interface Trainee {
     id: number;
     trainee_number: string;
+    registration_source: 'staff' | 'self';
     full_name: string;
     date_of_birth: string;
     gender: string;
@@ -253,7 +254,12 @@ export default function TraineeProfile() {
                         <ArrowLeft className="h-3.5 w-3.5" /> Back to Trainees List
                     </Link>
                     <h1 className="mt-2 font-display text-3xl font-extrabold text-ink">{trainee.full_name}</h1>
-                    <p className="mt-0.5 text-xs text-slate-500">Trainee ID: <span className="font-mono font-bold text-slate-700">{trainee.trainee_number}</span></p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        <span>Trainee ID: <span className="font-mono font-bold text-slate-700">{trainee.trainee_number}</span></span>
+                        {trainee.registration_source === 'self' && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">Self-registered</span>
+                        )}
+                    </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">

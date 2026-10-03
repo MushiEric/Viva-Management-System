@@ -73,7 +73,7 @@ export default function Timetable() {
     }, [cohorts, selectedCohortId]);
 
     const handleEnrollClick = (cohortId: number) => {
-        navigate(isAuthenticated ? `/enroll?cohort_id=${cohortId}` : `/login?cohort_id=${cohortId}`);
+        navigate(isAuthenticated ? `/enroll?cohort_id=${cohortId}` : `/register?cohort_id=${cohortId}`);
     };
 
     if (isLoading) {
@@ -164,7 +164,7 @@ export default function Timetable() {
                                             onClick={() => handleEnrollClick(selectedCohort.cohort_id)}
                                             className="inline-flex items-center gap-2 rounded-xl bg-viva-blue px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                                         >
-                                            {selectedCohort.capacity.status === 'full' ? 'Fully Booked' : 'Enroll in this Cohort'}
+                                            {selectedCohort.capacity.status === 'full' ? 'Fully Booked' : isAuthenticated ? 'Enroll in this Cohort' : 'Register for this Cohort'}
                                             {selectedCohort.capacity.status !== 'full' && <ArrowRight className="h-4 w-4" />}
                                         </button>
                                     </div>

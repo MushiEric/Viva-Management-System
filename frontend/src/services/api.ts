@@ -118,6 +118,18 @@ export const api = {
     },
 
     /**
+     * Public trainee self-registration with cohort enrollment.
+     */
+    async selfRegisterTrainee(payload: Record<string, unknown>): Promise<ApiResponse> {
+        const response = await fetch(`${BASE_URL}/trainee-registrations`, {
+            method: 'POST',
+            headers: getHeaders(false),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    /**
      * Submit student or minor enrollment.
      */
     async enroll(payload: { cohort_id: number; trainee_id: number }): Promise<ApiResponse> {
@@ -129,8 +141,11 @@ export const api = {
         return handleResponse(response);
     },
 
-    async getTrainees(search = ''): Promise<ApiResponse> {
-        const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    async getTrainees(search = '', source = ''): Promise<ApiResponse> {
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (source) params.set('source', source);
+        const query = params.toString() ? `?${params}` : '';
         const response = await fetch(`${BASE_URL}/trainees${query}`, {
             headers: getHeaders(true),
         });

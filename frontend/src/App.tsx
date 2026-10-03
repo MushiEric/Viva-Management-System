@@ -14,6 +14,7 @@ import Cohorts from './pages/Cohorts';
 import Trainees from './pages/Trainees';
 import TraineeProfile from './pages/TraineeProfile';
 import RegisterTrainee from './pages/RegisterTrainee';
+import SelfRegister from './pages/SelfRegister';
 import Learning from './pages/Learning';
 import Finance from './pages/Finance';
 import Resources from './pages/Resources';
@@ -23,7 +24,7 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import AuditLogs from './pages/AuditLogs';
 import NotificationBell from './components/NotificationBell';
-import { Activity, ChevronDown, LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, MessageSquareText, Settings2, UserCircle, X } from 'lucide-react';
+import { Activity, ChevronDown, LogOut, Calendar, LogIn, BookOpen, UsersRound, LibraryBig, CalendarRange, ContactRound, UserPlus, GraduationCap, WalletCards, FolderOpen, LayoutDashboard, Menu, MessageSquareText, Settings2, UserCircle, X } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -135,10 +136,16 @@ function NavigationLayout() {
                     <Link to="/timetable" className="shrink-0 transition-opacity hover:opacity-90" aria-label="Viva Digital Center">
                             <img src="/viva_logo.jpeg" alt="Viva Digital Center" className="h-14 w-auto object-contain" />
                     </Link>
-                        <Link to="/timetable" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
-                            <Calendar className="h-4 w-4" />
-                            <span>Timetable</span>
-                        </Link>
+                        <div className="flex items-center gap-5">
+                            <Link to="/timetable" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                <Calendar className="h-4 w-4" />
+                                <span>Timetable</span>
+                            </Link>
+                            <Link to="/register" className="flex items-center gap-1.5 py-2 font-display text-sm font-semibold text-slate-600 transition-colors hover:text-viva-blue">
+                                <UserPlus className="h-4 w-4" />
+                                <span>Register</span>
+                            </Link>
+                        </div>
                         <Link to="/login" className="flex items-center gap-1.5 rounded-full bg-viva-blue px-4 py-2 font-display text-sm font-bold text-white shadow-md shadow-viva-blue/20 transition-all hover:bg-slate-900 hover:shadow-none">
                             <LogIn className="h-4 w-4" />
                             <span>Login</span>
@@ -179,6 +186,7 @@ function NavigationLayout() {
                         <Route path="/" element={<Navigate to="/timetable" replace />} />
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                         <Route path="/timetable" element={<Timetable />} />
+                        <Route path="/register" element={<SelfRegister />} />
                         <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                         <Route path="/enroll" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
                         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />

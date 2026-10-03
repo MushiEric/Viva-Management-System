@@ -22,7 +22,7 @@ final readonly class EnrollmentService
     ) {
     }
 
-    public function enroll(Trainee $trainee, int $cohortId, User $actor): Enrollment
+    public function enroll(Trainee $trainee, int $cohortId, ?User $actor): Enrollment
     {
         return DB::transaction(function () use ($trainee, $cohortId, $actor) {
             $cohort = Cohort::lockForUpdate()->findOrFail($cohortId);
@@ -50,7 +50,7 @@ final readonly class EnrollmentService
                 'cohort_id' => $cohort->id,
                 'status' => 'active',
                 'enrolled_at' => now(),
-                'created_by' => $actor->id,
+                'created_by' => $actor?->id,
             ]);
 
             $this->audit->record($actor, 'trainee.enrolled', $enrollment, null, $enrollment->toArray());

@@ -338,6 +338,24 @@ paths:
           $ref: '#/components/responses/DataResponse'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /trainee-registrations:
+    post:
+      tags: [Public, Trainees]
+      summary: Trainee self-registration with cohort enrollment
+      description: Creates the trainee record and enrolls it in the chosen active cohort in one step. Rate limited to 6 requests per minute. File uploads are not accepted.
+      operationId: selfRegisterTrainee
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TraineeSelfRegistrationRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/DataResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /trainees:
     get:
       tags: [Trainees]
@@ -346,6 +364,12 @@ paths:
       x-permission: trainees.view
       parameters:
         - $ref: '#/components/parameters/Search'
+        - name: source
+          in: query
+          description: Filter by how the trainee was registered.
+          schema:
+            type: string
+            enum: [staff, self]
         - $ref: '#/components/parameters/Page'
       responses:
         '200':
@@ -1565,6 +1589,29 @@ components:
             full_name: { type: string }
             relationship: { type: string }
             phone: { type: string }
+    TraineeSelfRegistrationRequest:
+      type: object
+      required: [full_name, date_of_birth, gender, phone, address, cohort_id]
+      properties:
+        full_name: { type: string }
+        date_of_birth: { type: string, format: date }
+        gender: { type: string, enum: [male, female] }
+        phone: { type: string }
+        email: { type: [string, 'null'], format: email }
+        tin: { type: [string, 'null'] }
+        address: { type: string }
+        occupation: { type: [string, 'null'] }
+        cohort_id:
+          type: integer
+          description: An active cohort from GET /timetable.
+        emergency_contact:
+          type: object
+          description: Required when the trainee is under 18.
+          properties:
+            full_name: { type: string }
+            relationship: { type: string }
+            phone: { type: string }
+            alternate_phone: { type: [string, 'null'] }
     EnrollmentRequest:
       type: object
       required: [cohort_id, trainee_id]

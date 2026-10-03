@@ -8,6 +8,7 @@ use App\Modules\Communication\Http\Controllers\ContactInquiryController;
 use App\Modules\Communication\Http\Controllers\NotificationController;
 use App\Modules\Enrollment\Http\Controllers\EnrollmentController as StaffEnrollmentController;
 use App\Modules\Enrollment\Http\Controllers\TraineeController;
+use App\Modules\Enrollment\Http\Controllers\TraineeSelfRegistrationController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
 use App\Modules\Identity\Http\Controllers\StaffController;
 use App\Modules\Learning\Http\Controllers\LearningController;
@@ -28,6 +29,7 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
     Route::post('/contact-inquiries', [ContactInquiryController::class, 'store']);
+    Route::middleware('throttle:6,1')->post('/trainee-registrations', [TraineeSelfRegistrationController::class, 'store']);
     Route::get('/programs/{program}/image', [ProgramController::class, 'image']);
 
     // Sanctum protected API endpoints

@@ -31,6 +31,7 @@ final class TraineeController extends Controller
                 });
             })
             ->when($request->string('gender')->toString(), fn ($query, string $gender) => $query->where('gender', $gender))
+            ->when($request->string('source')->toString(), fn ($query, string $source) => $query->where('registration_source', $source))
             ->latest()
             ->paginate($request->integer('per_page', 20));
 

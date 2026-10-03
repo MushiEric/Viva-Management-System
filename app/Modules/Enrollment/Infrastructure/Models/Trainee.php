@@ -23,6 +23,7 @@ class Trainee extends Model
         'address',
         'occupation',
         'registration_form_path',
+        'registration_source',
     ];
 
     protected function casts(): array

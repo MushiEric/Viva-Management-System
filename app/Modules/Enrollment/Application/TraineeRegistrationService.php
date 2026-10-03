@@ -15,7 +15,7 @@ final readonly class TraineeRegistrationService
 {
     public function __construct(private AuditLogger $audit) {}
 
-    public function register(array $data, User $actor): Trainee
+    public function register(array $data, ?User $actor): Trainee
     {
         $documentPath = isset($data['registration_form'])
             ? $data['registration_form']->store('trainee-registration-forms', 'local')
@@ -41,6 +41,7 @@ final readonly class TraineeRegistrationService
                     'address' => $data['address'],
                     'occupation' => $data['occupation'] ?? null,
                     'registration_form_path' => $documentPath,
+                    'registration_source' => $data['registration_source'] ?? 'staff',
                 ]);
 
                 $trainee->update([
