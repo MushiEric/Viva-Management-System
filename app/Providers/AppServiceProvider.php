@@ -9,6 +9,7 @@ use App\Modules\Communication\Listeners\NotifyFacilitatorsOfCohortSchedule;
 use App\Modules\Communication\Listeners\NotifyManagersOfProgramSubmission;
 use App\Modules\Communication\Listeners\NotifyProgramCreatorOfApproval;
 use App\Modules\Communication\Listeners\NotifyProgramCreatorOfChanges;
+use App\Modules\Communication\Listeners\NotifyStaffOfSelfRegistration;
 use App\Modules\Communication\Listeners\SendClassReminderEmail;
 use App\Modules\Communication\Listeners\SendContactInquiryEmails;
 use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
@@ -17,6 +18,7 @@ use App\Modules\Communication\Listeners\SendInvoiceEmail;
 use App\Modules\Communication\Listeners\SendPaymentConfirmation;
 use App\Modules\Communication\Listeners\SendStaffApprovalEmail;
 use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
+use App\Modules\Enrollment\Domain\Events\TraineeSelfRegistered;
 use App\Modules\Finance\Domain\Events\DiscountApproved;
 use App\Modules\Finance\Domain\Events\InvoiceIssued;
 use App\Modules\Finance\Domain\Events\PaymentRecorded;
@@ -68,5 +70,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(DiscountApproved::class, SendDiscountApprovalEmail::class);
         Event::listen(ClassReminderDue::class, SendClassReminderEmail::class);
         Event::listen(ContactInquirySubmitted::class, SendContactInquiryEmails::class);
+        Event::listen(TraineeSelfRegistered::class, NotifyStaffOfSelfRegistration::class);
     }
 }

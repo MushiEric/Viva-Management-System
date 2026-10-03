@@ -3,7 +3,9 @@
 namespace App\Modules\Enrollment\Application;
 
 use App\Models\Enrollment;
+use App\Modules\Enrollment\Domain\Events\TraineeSelfRegistered;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
+use App\Shared\Application\EventBus;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
@@ -12,6 +14,7 @@ final readonly class TraineeSelfRegistrationService
     public function __construct(
         private TraineeRegistrationService $registration,
         private EnrollmentService $enrollment,
+        private EventBus $events,
     ) {}
 
     /**
@@ -32,9 +35,13 @@ final readonly class TraineeSelfRegistrationService
 
             $trainee = $this->registration->register([...$data, 'registration_source' => 'self'], null);
 
-            return $this->enrollment
+            $enrollment = $this->enrollment
                 ->enroll($trainee, (int) $data['cohort_id'], null)
                 ->load('trainee', 'cohort');
+
+            $this->events->dispatch(new TraineeSelfRegistered($enrollment));
+
+            return $enrollment;
         });
     }
 }

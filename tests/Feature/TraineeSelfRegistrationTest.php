@@ -6,9 +6,11 @@ use App\Models\Cohort;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
+use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -52,6 +54,52 @@ class TraineeSelfRegistrationTest extends TestCase
             'created_by' => null,
         ]);
         $this->assertDatabaseHas('audit_logs', ['action' => 'trainee.created', 'actor_id' => null]);
+    }
+
+    public function test_managers_and_admins_are_notified_of_self_registration(): void
+    {
+        Notification::fake();
+        $staff = collect(['admin', 'manager', 'facilitator'])->map(fn (string $role) => User::create([
+            'name' => ucfirst($role),
+            'email' => "{$role}@example.com",
+            'password' => bcrypt('password123'),
+            'role' => $role,
+            'status' => 'approved',
+            'approved_at' => now(),
+        ]))->keyBy('role');
+
+        $this->postJson('/api/v1/trainee-registrations', $this->payload())->assertCreated();
+
+        $trainee = Trainee::firstOrFail();
+        foreach (['admin', 'manager'] as $role) {
+            Notification::assertSentTo(
+                $staff[$role],
+                PortalNotification::class,
+                fn (PortalNotification $notification) => $notification->category === 'trainee'
+                    && $notification->actionUrl === "/trainees/{$trainee->id}"
+                    && str_contains($notification->message, 'Juma Hamisi')
+                    && str_contains($notification->message, 'Python Morning'),
+            );
+        }
+        Notification::assertNotSentTo($staff['facilitator'], PortalNotification::class);
+    }
+
+    public function test_failed_registration_sends_no_notification(): void
+    {
+        Notification::fake();
+        User::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 'admin',
+            'status' => 'approved',
+            'approved_at' => now(),
+        ]);
+        $this->cohort->update(['max_seats' => 0]);
+
+        $this->postJson('/api/v1/trainee-registrations', $this->payload())->assertUnprocessable();
+
+        Notification::assertNothingSent();
     }
 
     public function test_uploaded_registration_form_is_ignored(): void
