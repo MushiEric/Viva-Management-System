@@ -14,6 +14,13 @@ return [
     |
     */
 
+    'beem' => [
+        'key' => env('BEEM_API_KEY'),
+        'secret' => env('BEEM_SECRET_KEY'),
+        'sender_id' => env('BEEM_SENDER_ID'),
+        'url' => env('BEEM_SMS_URL', 'https://apisms.beem.africa/v1/send'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

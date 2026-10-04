@@ -10,6 +10,8 @@ use App\Modules\Communication\Notifications\PortalNotification;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Http\Client\Request as HttpRequest;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -100,6 +102,52 @@ class TraineeSelfRegistrationTest extends TestCase
         $this->postJson('/api/v1/trainee-registrations', $this->payload())->assertUnprocessable();
 
         Notification::assertNothingSent();
+    }
+
+    public function test_trainee_receives_confirmation_sms_via_beem(): void
+    {
+        config([
+            'services.beem.key' => 'test-key',
+            'services.beem.secret' => 'test-secret',
+            'services.beem.sender_id' => 'VIVA',
+        ]);
+        Http::fake(['apisms.beem.africa/*' => Http::response(['successful' => true])]);
+
+        $this->postJson('/api/v1/trainee-registrations', [...$this->payload(), 'phone' => '+255 712 345 678'])
+            ->assertCreated();
+
+        $trainee = Trainee::firstOrFail();
+        Http::assertSentCount(1);
+        Http::assertSent(fn (HttpRequest $request) => $request->url() === 'https://apisms.beem.africa/v1/send'
+            && $request->hasHeader('Authorization', 'Basic '.base64_encode('test-key:test-secret'))
+            && $request['source_addr'] === 'VIVA'
+            && $request['recipients'][0]['dest_addr'] === '255712345678'
+            && str_starts_with($request['message'], 'Hello Juma, you are registered at VIVA Digital Center for Python Morning.')
+            && str_contains($request['message'], $trainee->trainee_number));
+    }
+
+    public function test_sms_is_skipped_when_beem_is_not_configured(): void
+    {
+        config(['services.beem.key' => null]);
+        Http::fake();
+
+        $this->postJson('/api/v1/trainee-registrations', $this->payload())->assertCreated();
+
+        Http::assertNothingSent();
+    }
+
+    public function test_sms_gateway_failure_does_not_break_registration(): void
+    {
+        config([
+            'services.beem.key' => 'test-key',
+            'services.beem.secret' => 'test-secret',
+            'services.beem.sender_id' => 'VIVA',
+        ]);
+        Http::fake(['*' => Http::response(['error' => 'Invalid credentials'], 401)]);
+
+        $this->postJson('/api/v1/trainee-registrations', $this->payload())->assertCreated();
+
+        $this->assertSame(1, Trainee::count());
     }
 
     public function test_uploaded_registration_form_is_ignored(): void

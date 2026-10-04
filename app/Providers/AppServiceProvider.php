@@ -16,6 +16,7 @@ use App\Modules\Communication\Listeners\SendDiscountApprovalEmail;
 use App\Modules\Communication\Listeners\SendEnrollmentConfirmation;
 use App\Modules\Communication\Listeners\SendInvoiceEmail;
 use App\Modules\Communication\Listeners\SendPaymentConfirmation;
+use App\Modules\Communication\Listeners\SendSelfRegistrationSms;
 use App\Modules\Communication\Listeners\SendStaffApprovalEmail;
 use App\Modules\Enrollment\Domain\Events\TraineeEnrolled;
 use App\Modules\Enrollment\Domain\Events\TraineeSelfRegistered;
@@ -71,5 +72,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ClassReminderDue::class, SendClassReminderEmail::class);
         Event::listen(ContactInquirySubmitted::class, SendContactInquiryEmails::class);
         Event::listen(TraineeSelfRegistered::class, NotifyStaffOfSelfRegistration::class);
+        Event::listen(TraineeSelfRegistered::class, SendSelfRegistrationSms::class);
     }
 }
