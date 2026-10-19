@@ -189,7 +189,7 @@ export default function RegisterTrainee() {
                                     id="occupation"
                                     name="occupation"
                                     type="text"
-                                    placeholder="e.g. High School Student, Accountant, Self-Employed"
+                                    placeholder=""
                                     className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
                                     value={form.occupation}
                                     onChange={(e) => setForm({ ...form, occupation: e.target.value })}
