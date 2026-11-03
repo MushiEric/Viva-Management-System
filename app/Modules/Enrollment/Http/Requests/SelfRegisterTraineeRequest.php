@@ -2,7 +2,8 @@
 
 namespace App\Modules\Enrollment\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Modules\Training\Infrastructure\Models\ProgramLevel;
+use Closure;
 
 class SelfRegisterTraineeRequest extends StoreTraineeRequest
 {
@@ -13,14 +14,15 @@ class SelfRegisterTraineeRequest extends StoreTraineeRequest
 
         return [
             ...$rules,
-            'cohort_id' => ['required', 'integer', Rule::exists('cohorts', 'id')->where('is_active', true)],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'cohort_id.exists' => 'The selected class is no longer open for registration.',
+            'program_level_id' => [
+                'required',
+                'integer',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (! ProgramLevel::offeredForEnrollment()->whereKey($value)->exists()) {
+                        $fail('The selected course is no longer open for registration.');
+                    }
+                },
+            ],
         ];
     }
 }

@@ -89,7 +89,7 @@ export default function RegisterTrainee() {
 
                         <button
                             type="button"
-                            onClick={() => navigate('/enroll', { state: { traineeId: createdTrainee.id } })}
+                            onClick={() => navigate('/enroll/new', { state: { traineeId: createdTrainee.id } })}
                             className="inline-flex items-center justify-center gap-2 rounded-xl border border-viva-blue/30 bg-viva-blue/5 px-6 py-3 font-display text-sm font-bold text-viva-blue hover:bg-viva-blue hover:text-white"
                         >
                             <BookOpen className="h-4 w-4" />
@@ -151,13 +151,12 @@ export default function RegisterTrainee() {
 
                             <div>
                                 <label htmlFor="date_of_birth" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                    Date of Birth <span className="text-red-500">*</span>
+                                    Date of Birth
                                 </label>
                                 <input
                                     id="date_of_birth"
                                     name="date_of_birth"
                                     type="date"
-                                    required
                                     className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-viva-blue focus:ring-1 focus:ring-viva-blue"
                                     value={form.date_of_birth}
                                     onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}

@@ -20,7 +20,7 @@ final class TraineeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $trainees = Trainee::query()
-            ->with('emergencyContact')
+            ->with(['emergencyContact', 'requestedLevel.program:id,name'])
             ->withCount('enrollments')
             ->when($request->string('search')->toString(), function ($query, string $search) {
                 $query->where(function ($query) use ($search) {
@@ -56,6 +56,7 @@ final class TraineeController extends Controller
     ): JsonResponse {
         $trainee->load([
             'emergencyContact',
+            'requestedLevel.program:id,name',
             'enrollments' => fn ($query) => $query->latest('enrolled_at'),
             'enrollments.cohort.programLevel.program',
             'enrollments.cohort.scheduleDays',

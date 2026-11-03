@@ -49,7 +49,7 @@ export default function Learning() {
     const [attendance, setAttendance] = useState({ session_date: '', status: 'present', notes: '' });
     const [progress, setProgress] = useState({ percentage: 0, status: 'ongoing' });
 
-    const enrollmentsQuery = useQuery({ queryKey: ['learning-enrollments'], queryFn: api.getLearningEnrollments });
+    const enrollmentsQuery = useQuery({ queryKey: ['learning-enrollments'], queryFn: () => api.getLearningEnrollments() });
     const detailQuery = useQuery({ queryKey: ['learning-enrollment', selectedId], queryFn: () => api.getLearningEnrollment(selectedId!), enabled: !!selectedId });
     const refresh = () => {
         queryClient.invalidateQueries({ queryKey: ['learning-enrollments'] });
@@ -91,8 +91,8 @@ export default function Learning() {
                 <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                     {enrollments.map((enrollment) => (
                         <button key={enrollment.id} onClick={() => { setSelectedId(enrollment.id); setProgress({ percentage: Number(enrollment.progress_percentage), status: enrollment.status }); }} className={`block w-full border-b p-4 text-left hover:bg-slate-50 ${selectedId === enrollment.id ? 'bg-blue-50' : ''}`}>
-                            <p className="font-bold">{enrollment.trainee.full_name}</p>
-                            <p className="text-xs text-slate-500">{enrollment.cohort.program_level?.program.name || 'Program'} — {enrollment.cohort.program_level?.name || enrollment.cohort.name}</p>
+                            <p className="font-bold">{enrollment.trainee?.full_name || 'Student record unavailable'}</p>
+                            <p className="text-xs text-slate-500">{enrollment.cohort?.program_level?.program.name || 'Program'} — {enrollment.cohort?.program_level?.name || enrollment.cohort?.name || 'Cohort unavailable'}</p>
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-viva-green" style={{ width: `${enrollment.progress_percentage}%` }} /></div>
                             <p className="mt-1 text-xs">{enrollment.progress_percentage}% · {enrollment.status}</p>
                         </button>
@@ -105,7 +105,7 @@ export default function Learning() {
                     <div className="space-y-6">
                         <section className="rounded-2xl border bg-white p-6 shadow-sm">
                             <div className="flex flex-wrap items-start justify-between gap-4">
-                                <div><h2 className="font-display text-2xl font-extrabold">{detail.trainee.full_name}</h2><p className="text-sm text-slate-500">{detail.trainee.trainee_number} · {detail.cohort.name}</p></div>
+                                <div><h2 className="font-display text-2xl font-extrabold">{detail.trainee?.full_name || 'Student record unavailable'}</h2><p className="text-sm text-slate-500">{detail.trainee?.trainee_number || '—'} · {detail.cohort?.name || 'Cohort unavailable'}</p></div>
                                 {canComplete && !['completed', 'withdrawn', 'transferred'].includes(detail.status) && <button onClick={() => complete.mutate()} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white"><CheckCircle2 className="mr-1 inline h-4 w-4" />Mark Completed</button>}
                             </div>
                             <div className="mt-5 grid gap-3 md:grid-cols-[1fr_180px_auto]">

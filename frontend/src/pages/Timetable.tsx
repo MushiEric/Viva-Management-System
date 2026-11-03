@@ -72,8 +72,9 @@ export default function Timetable() {
         }
     }, [cohorts, selectedCohortId]);
 
-    const handleEnrollClick = (cohortId: number) => {
-        navigate(isAuthenticated ? `/enroll?cohort_id=${cohortId}` : `/register?cohort_id=${cohortId}`);
+    // Staff enroll into this exact cohort; guests register for its course and the office assigns a class.
+    const handleEnrollClick = (cohort: Cohort) => {
+        navigate(isAuthenticated ? `/enroll/new?cohort_id=${cohort.cohort_id}` : `/register?course=${cohort.level.id ?? ''}`);
     };
 
     if (isLoading) {
@@ -161,7 +162,7 @@ export default function Timetable() {
                                         <button
                                             type="button"
                                             disabled={selectedCohort.capacity.status === 'full'}
-                                            onClick={() => handleEnrollClick(selectedCohort.cohort_id)}
+                                            onClick={() => handleEnrollClick(selectedCohort)}
                                             className="inline-flex items-center gap-2 rounded-xl bg-viva-blue px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                                         >
                                             {selectedCohort.capacity.status === 'full' ? 'Fully Booked' : isAuthenticated ? 'Enroll in this Cohort' : 'Register for this Cohort'}

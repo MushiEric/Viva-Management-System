@@ -23,7 +23,7 @@ final readonly class TraineeRegistrationService
 
         try {
             return DB::transaction(function () use ($data, $actor, $documentPath) {
-                $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
+                $isMinor = ! empty($data['date_of_birth']) && CarbonImmutable::parse($data['date_of_birth'])->age < 18;
                 $emergency = $data['emergency_contact'] ?? null;
 
                 if ($isMinor && empty($emergency)) {
@@ -33,7 +33,7 @@ final readonly class TraineeRegistrationService
                 $trainee = Trainee::create([
                     'trainee_number' => 'PENDING-'.str()->uuid(),
                     'full_name' => $data['full_name'],
-                    'date_of_birth' => $data['date_of_birth'],
+                    'date_of_birth' => $data['date_of_birth'] ?? null,
                     'gender' => $data['gender'],
                     'phone' => $data['phone'],
                     'email' => $data['email'] ?? null,
@@ -42,6 +42,7 @@ final readonly class TraineeRegistrationService
                     'occupation' => $data['occupation'] ?? null,
                     'registration_form_path' => $documentPath,
                     'registration_source' => $data['registration_source'] ?? 'staff',
+                    'requested_program_level_id' => $data['requested_program_level_id'] ?? null,
                 ]);
 
                 $trainee->update([
@@ -74,7 +75,7 @@ final readonly class TraineeRegistrationService
 
         try {
             $updated = DB::transaction(function () use ($trainee, $data, $actor, $newDocumentPath) {
-                $isMinor = CarbonImmutable::parse($data['date_of_birth'])->age < 18;
+                $isMinor = ! empty($data['date_of_birth']) && CarbonImmutable::parse($data['date_of_birth'])->age < 18;
                 $emergency = $data['emergency_contact'] ?? null;
 
                 if ($isMinor && empty($emergency)) {
@@ -84,7 +85,7 @@ final readonly class TraineeRegistrationService
                 $before = $trainee->load('emergencyContact')->toArray();
                 $trainee->update([
                     'full_name' => $data['full_name'],
-                    'date_of_birth' => $data['date_of_birth'],
+                    'date_of_birth' => $data['date_of_birth'] ?? null,
                     'gender' => $data['gender'],
                     'phone' => $data['phone'],
                     'email' => $data['email'] ?? null,

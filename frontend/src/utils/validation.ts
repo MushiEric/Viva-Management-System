@@ -90,6 +90,31 @@ export const resetPasswordOtpSchema = z.object({
     path: ['confirmPassword'],
 });
 
+export const staffEnrollmentSchema = z.object({
+    trainee_id: z.number({ error: 'Select a student.' }).int().positive('Select a student.'),
+    cohort_id: z.number({ error: 'Select a cohort.' }).int().positive('Select a cohort.'),
+});
+
+export const createStaffSchema = z.object({
+    name: z.string().trim().min(2, 'Name must be at least 2 characters.'),
+    email: z.string().email('Enter a valid email address.'),
+    phone: z.string().trim().optional().or(z.literal('')),
+    role: z.enum(['facilitator', 'admin', 'manager']),
+    password: z.string()
+        .min(8, 'Use at least 8 characters.')
+        .regex(/[a-z]/, 'Include a lowercase letter.')
+        .regex(/[A-Z]/, 'Include an uppercase letter.')
+        .regex(/\d/, 'Include a number.')
+        .regex(/[^A-Za-z0-9]/, 'Include a symbol.'),
+    password_confirmation: z.string().min(1, 'Confirm the password.'),
+}).refine((data) => data.password === data.password_confirmation, {
+    message: 'Passwords do not match.',
+    path: ['password_confirmation'],
+});
+
+export type StaffEnrollmentInput = z.infer<typeof staffEnrollmentSchema>;
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type OtpOnlyInput = z.infer<typeof otpOnlySchema>;
 export type NewPasswordOnlyInput = z.infer<typeof newPasswordOnlySchema>;

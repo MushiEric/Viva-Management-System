@@ -25,8 +25,6 @@ Set production values for:
 - `MAIL_*`
 - `VIVA_MANAGER_EMAIL`
 - `VIVA_MANAGER_PASSWORD`
-- `VIVA_ADMIN_EMAIL`
-- `VIVA_ADMIN_PASSWORD`
 - `VITE_API_URL`
 
 Initial staff passwords must be strong and changed after first deployment.

@@ -28,6 +28,7 @@ Route::middleware('throttle:api')->prefix('v1')->group(function () {
     Route::middleware('throttle:6,1')->post('/reset-password/otp', [AuthController::class, 'resetPasswordWithOtp']);
     // Public API endpoints
     Route::get('/timetable', [TimetableController::class, 'index']);
+    Route::get('/course-options', [ProgramController::class, 'courseOptions']);
     Route::post('/contact-inquiries', [ContactInquiryController::class, 'store']);
     Route::middleware('throttle:6,1')->post('/trainee-registrations', [TraineeSelfRegistrationController::class, 'store']);
     Route::get('/programs/{program}/image', [ProgramController::class, 'image']);

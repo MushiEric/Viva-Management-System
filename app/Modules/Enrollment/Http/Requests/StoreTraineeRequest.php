@@ -11,7 +11,7 @@ class StoreTraineeRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:255'],
-            'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
+            'date_of_birth' => ['nullable', 'date', 'before_or_equal:today'],
             'gender' => ['required', Rule::in(['male', 'female'])],
             'phone' => ['required', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],

@@ -4,6 +4,7 @@ namespace App\Modules\Training\Infrastructure\Models;
 
 use App\Models\Cohort;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -35,6 +36,23 @@ class ProgramLevel extends Model
             'fee_tzs' => 'decimal:2',
             'fee_approved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Levels trainees can be enrolled in: an approved fee on an approved program.
+     */
+    public function scopeOfferedForEnrollment(Builder $query): void
+    {
+        $query->where('fee_status', 'approved')
+            ->whereHas('program', fn ($query) => $query->where('status', 'approved'));
+    }
+
+    /**
+     * Human-readable course name, e.g. "Python Programming — Beginner".
+     */
+    public function displayName(): string
+    {
+        return "{$this->program->name} — {$this->name}";
     }
 
     public function program(): BelongsTo

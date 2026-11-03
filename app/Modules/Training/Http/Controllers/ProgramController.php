@@ -28,6 +28,35 @@ final class ProgramController extends Controller
         return response()->json(['success' => true, 'data' => $programs]);
     }
 
+    /**
+     * Public list of courses a trainee can register for, one entry per program level.
+     */
+    public function courseOptions(): JsonResponse
+    {
+        $courses = ProgramLevel::query()
+            ->offeredForEnrollment()
+            ->with('program:id,name,description')
+            ->get()
+            ->sortBy([['program.name', 'asc'], ['id', 'asc']])
+            ->values()
+            ->map(fn (ProgramLevel $level) => [
+                'program_level_id' => $level->id,
+                'program' => [
+                    'id' => $level->program->id,
+                    'name' => $level->program->name,
+                    'description' => $level->program->description,
+                ],
+                'level_name' => $level->name,
+                'display_name' => $level->displayName(),
+                'description' => $level->description,
+                'duration_weeks' => $level->duration_weeks,
+                'training_days_per_week' => $level->training_days_per_week,
+                'fee_tzs' => $level->fee_tzs,
+            ]);
+
+        return response()->json(['success' => true, 'data' => $courses]);
+    }
+
     public function facilitators(): JsonResponse
     {
         $facilitators = User::query()

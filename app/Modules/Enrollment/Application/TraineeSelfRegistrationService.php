@@ -2,7 +2,6 @@
 
 namespace App\Modules\Enrollment\Application;
 
-use App\Models\Enrollment;
 use App\Modules\Enrollment\Domain\Events\TraineeSelfRegistered;
 use App\Modules\Enrollment\Infrastructure\Models\Trainee;
 use App\Shared\Application\EventBus;
@@ -13,15 +12,15 @@ final readonly class TraineeSelfRegistrationService
 {
     public function __construct(
         private TraineeRegistrationService $registration,
-        private EnrollmentService $enrollment,
         private EventBus $events,
     ) {}
 
     /**
-     * Register a trainee from the public form and enroll them in the chosen cohort.
-     * Both steps share one transaction so a full cohort leaves no orphan trainee record.
+     * Register a trainee from the public form with the course they want to take.
+     * Start dates are flexible, so no enrollment is created here: the office enrolls
+     * the trainee into a cohort once their schedule is agreed.
      */
-    public function register(array $data): Enrollment
+    public function register(array $data): Trainee
     {
         return DB::transaction(function () use ($data) {
             $alreadyRegistered = Trainee::query()
@@ -30,18 +29,18 @@ final readonly class TraineeSelfRegistrationService
                 ->exists();
 
             if ($alreadyRegistered) {
-                throw new DomainException('You are already registered. Please contact the office to join another class.');
+                throw new DomainException('You are already registered. Please contact the office to join another course.');
             }
 
-            $trainee = $this->registration->register([...$data, 'registration_source' => 'self'], null);
+            $trainee = $this->registration->register([
+                ...$data,
+                'registration_source' => 'self',
+                'requested_program_level_id' => $data['program_level_id'],
+            ], null)->load('requestedLevel.program');
 
-            $enrollment = $this->enrollment
-                ->enroll($trainee, (int) $data['cohort_id'], null)
-                ->load('trainee', 'cohort');
+            $this->events->dispatch(new TraineeSelfRegistered($trainee));
 
-            $this->events->dispatch(new TraineeSelfRegistered($enrollment));
-
-            return $enrollment;
+            return $trainee;
         });
     }
 }

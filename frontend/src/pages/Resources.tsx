@@ -59,7 +59,7 @@ export default function Resources() {
     const materialsQuery = useQuery({ queryKey: ['learning-materials'], queryFn: api.getLearningMaterials });
     const programsQuery = useQuery({ queryKey: ['programs'], queryFn: api.getPrograms });
     const certificatesQuery = useQuery({ queryKey: ['certificates'], queryFn: api.getCertificates, enabled: canIssue });
-    const enrollmentsQuery = useQuery({ queryKey: ['learning-enrollments'], queryFn: api.getLearningEnrollments, enabled: canIssue });
+    const enrollmentsQuery = useQuery({ queryKey: ['learning-enrollments'], queryFn: () => api.getLearningEnrollments(), enabled: canIssue });
     const refresh = () => {
         queryClient.invalidateQueries({ queryKey: ['learning-materials'] });
         queryClient.invalidateQueries({ queryKey: ['certificates'] });
@@ -151,13 +151,13 @@ export default function Resources() {
                     <section className="rounded-2xl border bg-white p-6 shadow-sm">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold"><Award className="h-5 w-5 text-amber-500" />Completed Enrollments</h2>
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            {enrollments.filter((item) => item.status === 'completed' && !certificateEnrollmentIds.has(item.id)).map((enrollment) => <div key={enrollment.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-4"><div><p className="font-bold">{enrollment.trainee.full_name}</p><p className="text-xs text-slate-500">{enrollment.cohort.program_level?.program.name} — {enrollment.cohort.program_level?.name}</p></div><button onClick={() => issue.mutate(enrollment.id)} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white">Generate Certificate</button></div>)}
+                            {enrollments.filter((item) => item.status === 'completed' && !certificateEnrollmentIds.has(item.id)).map((enrollment) => <div key={enrollment.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-4"><div><p className="font-bold">{enrollment.trainee?.full_name || 'Student record unavailable'}</p><p className="text-xs text-slate-500">{enrollment.cohort?.program_level?.program.name} — {enrollment.cohort?.program_level?.name}</p></div><button onClick={() => issue.mutate(enrollment.id)} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white">Generate Certificate</button></div>)}
                         </div>
                     </section>
 
                     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                         <h2 className="flex items-center gap-2 p-5 font-display text-lg font-bold"><ScrollText className="h-5 w-5" />Issued Certificates</h2>
-                        {certificates.map((certificate) => <div key={certificate.id} className="flex items-center justify-between border-t p-4"><div><p className="font-bold">{certificate.enrollment.trainee.full_name}</p><p className="text-xs text-slate-500">{certificate.certificate_number} · {new Date(certificate.issued_at).toLocaleDateString()}</p></div><button onClick={() => api.downloadCertificate(certificate.id, certificate.certificate_number)} className="rounded-lg border px-3 py-2 text-xs font-bold"><Download className="mr-1 inline h-4 w-4" />PDF</button></div>)}
+                        {certificates.map((certificate) => <div key={certificate.id} className="flex items-center justify-between border-t p-4"><div><p className="font-bold">{certificate.enrollment?.trainee?.full_name || 'Student record unavailable'}</p><p className="text-xs text-slate-500">{certificate.certificate_number} · {new Date(certificate.issued_at).toLocaleDateString()}</p></div><button onClick={() => api.downloadCertificate(certificate.id, certificate.certificate_number)} className="rounded-lg border px-3 py-2 text-xs font-bold"><Download className="mr-1 inline h-4 w-4" />PDF</button></div>)}
                     </section>
                 </>
             )}

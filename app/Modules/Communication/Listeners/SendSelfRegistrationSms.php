@@ -17,15 +17,15 @@ final class SendSelfRegistrationSms implements ShouldQueueAfterCommit
 
     public function handle(TraineeSelfRegistered $event): void
     {
-        $trainee = $event->enrollment->trainee;
-        $cohort = $event->enrollment->cohort;
+        $trainee = $event->trainee;
+        $course = $trainee->requestedLevel?->displayName() ?? 'your course';
         $firstName = strtok($trainee->full_name, ' ');
 
         try {
             $this->sms->send(
                 $trainee->phone,
-                "Hello {$firstName}, you are registered at VIVA Digital Center for {$cohort->name}. "
-                ."Your trainee number is {$trainee->trainee_number}. We will contact you with class and payment details.",
+                "Hello {$firstName}, you are registered at VIVA Digital Center for {$course}. "
+                ."Your trainee number is {$trainee->trainee_number}. We will contact you to agree your class schedule and payment.",
             );
         } catch (Throwable $e) {
             Log::error('Failed to send self-registration SMS: '.$e->getMessage());

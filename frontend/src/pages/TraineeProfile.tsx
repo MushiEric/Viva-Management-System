@@ -28,7 +28,7 @@ interface Trainee {
     trainee_number: string;
     registration_source: 'staff' | 'self';
     full_name: string;
-    date_of_birth: string;
+    date_of_birth: string | null;
     gender: string;
     phone: string | null;
     email: string | null;
@@ -36,6 +36,7 @@ interface Trainee {
     address: string | null;
     occupation: string | null;
     registration_form_path: string | null;
+    requested_level: { name: string; program: { name: string } } | null;
     created_at?: string;
     emergency_contact: EmergencyContact | null;
     enrollments: Enrollment[];
@@ -201,7 +202,7 @@ export default function TraineeProfile() {
         const emergency = trainee.emergency_contact;
         setForm({
             full_name: trainee.full_name,
-            date_of_birth: trainee.date_of_birth,
+            date_of_birth: trainee.date_of_birth ?? '',
             gender: trainee.gender,
             phone: trainee.phone || '',
             email: trainee.email || '',
@@ -258,6 +259,9 @@ export default function TraineeProfile() {
                         <span>Trainee ID: <span className="font-mono font-bold text-slate-700">{trainee.trainee_number}</span></span>
                         {trainee.registration_source === 'self' && (
                             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">Self-registered</span>
+                        )}
+                        {trainee.requested_level && (
+                            <span>Requested course: <span className="font-bold text-slate-700">{trainee.requested_level.program.name} — {trainee.requested_level.name}</span></span>
                         )}
                     </p>
                 </div>
@@ -388,7 +392,7 @@ export default function TraineeProfile() {
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Date of Birth</p>
-                                <p className="mt-1 text-sm font-semibold text-slate-800">{trainee.date_of_birth}</p>
+                                <p className="mt-1 text-sm font-semibold text-slate-800">{trainee.date_of_birth || 'Not provided'}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gender</p>
@@ -468,7 +472,7 @@ export default function TraineeProfile() {
                 <div className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="font-display text-xl font-bold text-ink">Enrolled Cohorts ({trainee.enrollments.length})</h2>
-                        <Link to="/enroll" className="inline-flex items-center gap-1.5 rounded-xl bg-viva-blue px-4 py-2 font-display text-xs font-bold text-white shadow-md">
+                        <Link to={`/enroll/new?trainee_id=${trainee.id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-viva-blue px-4 py-2 font-display text-xs font-bold text-white shadow-md">
                             + Enroll in New Course
                         </Link>
                     </div>
@@ -640,7 +644,7 @@ export default function TraineeProfile() {
                                 </label>
                                 <label className="text-xs font-bold uppercase text-slate-500">
                                     Date of Birth
-                                    <input required type="date" className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
+                                    <input type="date" className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
                                 </label>
                                 <label className="text-xs font-bold uppercase text-slate-500">
                                     Gender

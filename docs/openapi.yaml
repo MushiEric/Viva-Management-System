@@ -338,11 +338,21 @@ paths:
           $ref: '#/components/responses/DataResponse'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /course-options:
+    get:
+      tags: [Public]
+      summary: List courses open for self-registration
+      description: One entry per program level with an approved fee on an approved program.
+      operationId: getCourseOptions
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/DataResponse'
   /trainee-registrations:
     post:
       tags: [Public, Trainees]
-      summary: Trainee self-registration with cohort enrollment
-      description: Creates the trainee record and enrolls it in the chosen active cohort in one step. Rate limited to 6 requests per minute. File uploads are not accepted.
+      summary: Trainee self-registration for a requested course
+      description: Creates the trainee record with the requested course. No enrollment is created; staff enroll the trainee into a cohort later. Rate limited to 6 requests per minute. File uploads are not accepted.
       operationId: selfRegisterTrainee
       security: []
       requestBody:
@@ -1557,7 +1567,7 @@ components:
           maxLength: 5000
     TraineeForm:
       type: object
-      required: [full_name, date_of_birth, gender, phone, address]
+      required: [full_name, gender, phone, address]
       properties:
         full_name:
           type: string
@@ -1591,22 +1601,22 @@ components:
             phone: { type: string }
     TraineeSelfRegistrationRequest:
       type: object
-      required: [full_name, date_of_birth, gender, phone, address, cohort_id]
+      required: [full_name, gender, phone, address, program_level_id]
       properties:
         full_name: { type: string }
-        date_of_birth: { type: string, format: date }
+        date_of_birth: { type: [string, 'null'], format: date }
         gender: { type: string, enum: [male, female] }
         phone: { type: string }
         email: { type: [string, 'null'], format: email }
         tin: { type: [string, 'null'] }
         address: { type: string }
         occupation: { type: [string, 'null'] }
-        cohort_id:
+        program_level_id:
           type: integer
-          description: An active cohort from GET /timetable.
+          description: A course from GET /course-options.
         emergency_contact:
           type: object
-          description: Required when the trainee is under 18.
+          description: Required when a date of birth is given and the trainee is under 18.
           properties:
             full_name: { type: string }
             relationship: { type: string }

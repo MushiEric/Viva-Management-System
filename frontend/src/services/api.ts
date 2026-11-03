@@ -118,7 +118,18 @@ export const api = {
     },
 
     /**
-     * Public trainee self-registration with cohort enrollment.
+     * Courses (program levels) open for self-registration.
+     */
+    async getCourseOptions(): Promise<ApiResponse<any[]>> {
+        const response = await fetch(`${BASE_URL}/course-options`, {
+            method: 'GET',
+            headers: getHeaders(false), // Public: used by the self-registration form
+        });
+        return handleResponse(response);
+    },
+
+    /**
+     * Public trainee self-registration for a requested course.
      */
     async selfRegisterTrainee(payload: Record<string, unknown>): Promise<ApiResponse> {
         const response = await fetch(`${BASE_URL}/trainee-registrations`, {
@@ -390,8 +401,11 @@ export const api = {
         return handleResponse(response);
     },
 
-    async getLearningEnrollments(): Promise<ApiResponse> {
-        const response = await fetch(`${BASE_URL}/learning/enrollments`, { headers: getHeaders(true) });
+    async getLearningEnrollments(params?: { status?: string }): Promise<ApiResponse> {
+        const search = new URLSearchParams();
+        if (params?.status) search.set('status', params.status);
+        const query = search.toString() ? `?${search}` : '';
+        const response = await fetch(`${BASE_URL}/learning/enrollments${query}`, { headers: getHeaders(true) });
         return handleResponse(response);
     },
 

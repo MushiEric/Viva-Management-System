@@ -202,7 +202,7 @@ export default function Finance() {
                                 <div>
                                     <p className="font-bold">This trainee has no active enrollment.</p>
                                     <p className="mt-1">Enroll the trainee in a cohort before creating an invoice.</p>
-                                    <Link to="/enroll" className="mt-2 inline-block font-bold text-viva-blue hover:underline">Go to Enroll Student</Link>
+                                    <Link to={`/enroll/new?trainee_id=${traineeId}`} className="mt-2 inline-block font-bold text-viva-blue hover:underline">Go to Enroll Student</Link>
                                 </div>
                             </div>
                         </div>

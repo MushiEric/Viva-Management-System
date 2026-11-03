@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Modules\Identity\Domain\Permission;
-use App\Modules\Identity\Infrastructure\Models\PermissionOverride;
 use App\Modules\Settings\Infrastructure\Models\SystemSetting;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +14,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $managerEmail = env('VIVA_MANAGER_EMAIL', 'manager@vivadigitalcenter.com');
+        // Only the manager is seeded; admins and facilitators are created as staff from the app.
+        $managerEmail = env('VIVA_MANAGER_EMAIL', 'vivadigitalcenter@gmail.com');
         $manager = User::firstOrCreate(['email' => $managerEmail], [
             'name' => 'Viva Manager',
             'phone' => '0784906044',
@@ -29,31 +28,6 @@ class DatabaseSeeder extends Seeder
             'role' => 'manager',
             'status' => 'approved',
             'approved_at' => $manager->approved_at ?? now(),
-        ]);
-
-        $adminEmail = env('VIVA_ADMIN_EMAIL', 'vivadigitalcenter@gmail.com');
-        $admin = User::firstOrCreate(['email' => $adminEmail], [
-            'name' => 'Viva Admin',
-            'phone' => '0784906044',
-            'role' => 'admin',
-            'status' => 'approved',
-            'approved_by' => $manager->id,
-            'approved_at' => now(),
-            'password' => Hash::make(env('VIVA_ADMIN_PASSWORD', 'ChangeMe123!')),
-        ]);
-        $admin->update([
-            'role' => 'admin',
-            'status' => 'approved',
-            'approved_by' => $manager->id,
-            'approved_at' => $admin->approved_at ?? now(),
-        ]);
-
-        PermissionOverride::updateOrCreate([
-            'user_id' => $admin->id,
-            'permission' => Permission::ManageSettings->value,
-        ], [
-            'allowed' => true,
-            'granted_by' => $manager->id,
         ]);
 
         $settings = SystemSetting::query()->firstOrCreate(['id' => 1], SystemSetting::defaults());

@@ -16,8 +16,8 @@ final class NotifyStaffOfSelfRegistration implements ShouldQueueAfterCommit
 
     public function handle(TraineeSelfRegistered $event): void
     {
-        $trainee = $event->enrollment->trainee;
-        $cohort = $event->enrollment->cohort;
+        $trainee = $event->trainee;
+        $course = $trainee->requestedLevel?->displayName() ?? 'a course';
         $staff = User::query()
             ->whereIn('role', ['manager', 'admin'])
             ->where('status', 'approved')
@@ -28,9 +28,9 @@ final class NotifyStaffOfSelfRegistration implements ShouldQueueAfterCommit
                 $user->notify(new PortalNotification(
                     'trainee',
                     'New Trainee Self-Registration',
-                    "{$trainee->full_name} ({$trainee->trainee_number}) registered online and enrolled in {$cohort->name}.",
+                    "{$trainee->full_name} ({$trainee->trainee_number}) registered online for {$course} and is waiting to be enrolled in a class.",
                     "/trainees/{$trainee->id}",
-                    ['trainee_id' => $trainee->id, 'enrollment_id' => $event->enrollment->id],
+                    ['trainee_id' => $trainee->id, 'program_level_id' => $trainee->requested_program_level_id],
                 ));
             }
         } catch (Throwable $e) {

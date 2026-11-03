@@ -77,7 +77,7 @@ export default function Dashboard() {
                 <section className="rounded-2xl border bg-white p-6 shadow-sm">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold"><CheckCircle2 className="h-5 w-5 text-viva-green" />Recent Completions</h2>
                     <div className="mt-4 space-y-3">
-                        {(dashboard?.recent_completions || []).map((item: any) => <div key={item.id} className="rounded-xl bg-slate-50 p-4"><p className="font-bold">{item.trainee.full_name}</p><p className="text-xs text-slate-500">{item.cohort.program_level?.program.name} — {item.cohort.program_level?.name}</p></div>)}
+                        {(dashboard?.recent_completions || []).map((item: any) => <div key={item.id} className="rounded-xl bg-slate-50 p-4"><p className="font-bold">{item.trainee?.full_name || 'Student record unavailable'}</p><p className="text-xs text-slate-500">{item.cohort?.program_level?.program.name} — {item.cohort?.program_level?.name}</p></div>)}
                         {!dashboard?.recent_completions?.length && <p className="py-6 text-center text-sm text-slate-400">No completed enrollments yet.</p>}
                     </div>
                 </section>

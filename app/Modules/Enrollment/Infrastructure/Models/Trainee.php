@@ -3,7 +3,9 @@
 namespace App\Modules\Enrollment\Infrastructure\Models;
 
 use App\Models\Enrollment;
+use App\Modules\Training\Infrastructure\Models\ProgramLevel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,6 +26,7 @@ class Trainee extends Model
         'occupation',
         'registration_form_path',
         'registration_source',
+        'requested_program_level_id',
     ];
 
     protected function casts(): array
@@ -36,6 +39,11 @@ class Trainee extends Model
         return $this->hasOne(EmergencyContact::class);
     }
 
+    public function requestedLevel(): BelongsTo
+    {
+        return $this->belongsTo(ProgramLevel::class, 'requested_program_level_id');
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
@@ -43,6 +51,6 @@ class Trainee extends Model
 
     public function isMinor(): bool
     {
-        return $this->date_of_birth->age < 18;
+        return $this->date_of_birth !== null && $this->date_of_birth->age < 18;
     }
 }

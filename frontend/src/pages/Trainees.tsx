@@ -23,7 +23,7 @@ interface TraineeSummary {
     id: number;
     trainee_number: string;
     full_name: string;
-    date_of_birth: string;
+    date_of_birth: string | null;
     gender: string;
     phone: string | null;
     email: string | null;
@@ -33,6 +33,7 @@ interface TraineeSummary {
     registration_form_path: string | null;
     registration_source: 'staff' | 'self';
     enrollments_count: number;
+    requested_level: { name: string; program: { name: string } } | null;
     emergency_contact: EmergencyContact | null;
 }
 
@@ -132,7 +133,7 @@ export default function Trainees() {
         const emergency = trainee.emergency_contact;
         setForm({
             full_name: trainee.full_name,
-            date_of_birth: trainee.date_of_birth,
+            date_of_birth: trainee.date_of_birth ?? '',
             gender: trainee.gender,
             phone: trainee.phone || '',
             email: trainee.email || '',
@@ -278,6 +279,11 @@ export default function Trainees() {
                                                             Self-registered
                                                         </span>
                                                     )}
+                                                    {trainee.requested_level && trainee.enrollments_count === 0 && (
+                                                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-sky-700">
+                                                            Awaiting class · {trainee.requested_level.program.name} — {trainee.requested_level.name}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -393,11 +399,10 @@ export default function Trainees() {
 
                                 <div>
                                     <label htmlFor="edit_date_of_birth" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Date of Birth <span className="text-red-500">*</span>
+                                        Date of Birth
                                     </label>
                                     <input
                                         id="edit_date_of_birth"
-                                        required
                                         type="date"
                                         className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-800"
                                         value={form.date_of_birth}

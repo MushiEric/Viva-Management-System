@@ -26,8 +26,7 @@ final class CohortController extends Controller
     public function options(): JsonResponse
     {
         $levels = ProgramLevel::query()
-            ->where('fee_status', 'approved')
-            ->whereHas('program', fn ($query) => $query->where('status', 'approved'))
+            ->offeredForEnrollment()
             ->with('program:id,name')
             ->get(['id', 'program_id', 'name', 'fee_tzs']);
 
